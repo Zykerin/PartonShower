@@ -4,7 +4,8 @@ import numpy as  np
 import scipy.optimize 
 import matplotlib.pyplot as plt
 import tqdm
-
+from dataclasses import dataclass
+'''
 class EmissionValues:
     def __init__(self, t, z, Pt, Vm):
         self.t = t
@@ -12,17 +13,30 @@ class EmissionValues:
         self.Pt = Pt
         self.Vm = Vm
         self.EndEvolution = False
+'''
+# A class for particles
+@dataclass
+class Particle:
+    typ: int
+    z: float
+    t: float
+    Pt: float
+    Vm: float
+    EndEvolution: bool = False
 
+@dataclass
+class Jet:
+    Particles: list[Particle]
 
-#Pt = Q**2 # The transverse momemntum
-Cf = 4/3 # The quark color factor
 t0 = 1 # The cuttoff scale
 Q = 1000 # The Hard scale? - the scale attributed to the hard process 
 aS= 0.118 # The coupling constant
 aSover = aS # Use the fixed overestimate alphaS constant
 nbins = 30 # The number of bins
-Nevolve = 10000 # The number of evolutions
-Ca = 3
+Nevolve = 100000 # The number of evolutions
+Nc = 3
+Cf = 4/3 # The quark color factor
+Ca = Nc
 Tr = 1/2
 
 # The g - > gg splitting function
@@ -98,11 +112,7 @@ def tEmission(tmax, t0, R, aSover, tGamma):
     argsol = (tmax, R, aSover, t0, tGamma)
 
     ContinuedEvolve = True
-    try:
-        t = scipy.optimize.ridder(E, 3.99, tmax**2, args = argsol, xtol= prec)
-    except:
-        #print('Error')
-        t = 3.99
+    t = scipy.optimize.ridder(E, 3.99, tmax**2, args = argsol, xtol= prec)
     
     # If a root is not found, stop the evolution for this branch
     if abs(E(t, tmax, R, aSover, t0, tGamma)) > prec:
@@ -184,7 +194,7 @@ def GenerateEmissions (tmax, t0, aSover, branch_type):
 def Evolve(Q, t0, aSover):
     emissions = []
     # Cases: 1: g -> gg, 2: q -> qg, 3: g -> qqbar
-    branch_type = 1
+    branch_type = 2
     # Set the initial t and z emission values
     t = Q**2
     z = 1
@@ -242,23 +252,19 @@ for i in range(len(edges)-1):
 
 # Set the z values and bins arrays into a numpy array for easier use
 X = np.array(X)
-dist = np.array(dist)
-
-dist = dist * (1-X)
-
-
-testP = Pgg(X)  * (1-X)
+Y = np.array(dist)  * (1 -X)
+testP = Pqq(X) * (1-X)
 
 
 # Set the constant to normalize the bins array to the comparison array to easily compare the two
 integ = np.linalg.norm(testP)
 
-norm = np.linalg.norm(dist)
-Y = integ * dist / norm
+norm = np.linalg.norm(Y)
+Y = integ * Y/ norm
 
 
-plt.plot(X, Y, label='generated', lw= 0, marker='o')
-plt.plot(X, testP, label='analytical')
+plt.plot(X, Y, label='generated', lw= 0, marker='o', color = 'blue')
+plt.plot(X, testP, label='analytical', color = 'red')
 
 plt.xlabel('z')
 plt.ylabel('P(z)(1-z)')
