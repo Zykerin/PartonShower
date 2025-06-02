@@ -9,8 +9,8 @@ from dataclasses import dataclass
 # A class for the emission info
 @dataclass
 class emissioninfo:
-    z: float
     t: float
+    z: float
     Ptsq:float
     Vmsq: float
     Generated: bool
@@ -34,8 +34,6 @@ t0 = 1 # The cuttoff scale
 Q = 1000 # The Hard scale? - the scale attributed to the hard process 
 aS= 0.118 # The coupling constant
 aSover = aS # Use the fixed overestimate alphaS constant
-nbins = 30 # The number of bins
-Nevolve = 10000 # The number of evolutions
 # The QCD constants
 Nc = 3
 Cf = (Nc**2 -1)/ (2 * Nc) # The quark color factor
@@ -44,14 +42,14 @@ Tr = 1/2
 
 # The g - > gg splitting function, overestimate, integral, and integral's inverse
 def Pgg(z):
-    return  2 * Ca * ((1 - z * (1-z))**2) / (z * (1-z))
+    return  Ca * ((1 - z * (1-z))**2) / (z * (1-z))
     #return   Ca * (z / (1.0 - z) + (1.0 - z) / z + z * (1.0 - z))
 def Pgg_over(z):
     return Ca * (1/(1-z) + 1/z)
 def tGamma_gg(z, aSover):
-    return -Ca * (aSover) * np.log(1/z - 1)
+    return -Ca * (aSover/ (2 * np.pi)) * np.log(1/z - 1)
 def inversetGamma_gg(z, aSover):
-    return 1 / (1 + np.exp(-z/ (Ca * aSover)))
+    return 1 / (1 + np.exp(-2 * np.pi * z/ (Ca * aSover)))
 
 
 # The g -> qqbar splitting function
@@ -62,10 +60,10 @@ def Pgq_over(z):
     return Tr
 # The g -> qqbar splitting function integral
 def tGamma_gq(z, aSover):
-    return Tr * (aSover) * z
+    return Tr * (aSover/ (2 * np.pi)) * z
 # The g -> qqbar splitting function integral inverse
 def inversetGamma_gq(z, aSover):
-    return 1 / (Tr * aSover) * z
+    return 1 / (Tr * (aSover/ (2 * np.pi))) * z
 
 
 # The q -> gq splitting function, overestimate, integral, and inverse integral
@@ -88,10 +86,10 @@ def Pqq_over (z):
 # Define the analytical solution to the overestimate of t * Gamma integrated over z.
 # For this program, this can be seen as rho tilda...
 def tGamma_qq (z, aSover):
-    return -2 * Cf * aSover * np.log(1 - z)
+    return -2 * Cf * (aSover/ (2 * np.pi)) * np.log(1 - z)
 # Define the inverse gamma function
 def inversetGamma_qq (z, aSover):
-    return 1 - np.exp(-z / ( 2 * Cf * aSover))
+    return 1 - np.exp(-z / ( 2 * Cf * (aSover/ (2 * np.pi))))
 
 
 # Define the transverse momnentum sqaured
@@ -117,15 +115,15 @@ def E(t, tmax, R, aSover, t0, tGamma):
 
 
 # Define the function to determine the t value
-def tEmission(tmax, t0, R, aSover, tGamma):
+def tEmission(Q, t0, R, aSover, tGamma):
     prec = 1E-3 # Precision for the solution
-    argsol = (tmax, R, aSover, t0, tGamma)
+    argsol = (Q, R, aSover, t0, tGamma)
 
     ContinuedEvolve = True
-    t = scipy.optimize.ridder(E, 3.99, tmax**2, args = argsol, xtol= prec)
+    t = scipy.optimize.ridder(E, 3.99, Q**2, args = argsol, xtol= prec)
     
     # If a root is not found, stop the evolution for this branch
-    if abs(E(t, tmax, R, aSover, t0, tGamma)) > prec:
+    if abs(E(t, Q, R, aSover, t0, tGamma)) > prec:
         ContinuedEvolve = False
     return t, ContinuedEvolve
 
@@ -179,16 +177,16 @@ def GenerateEmissions (tmax, t0, aSover, branch_type):
     Ems.Vmsq = virtualmass(Ems.t, Ems.z)
     # Determine whether the transverse momentum is physical
     if Ems.Ptsq < 0:
-        Ems.generated = False
+        Ems.Generated = False
     
     # Determine whether or no to accept the t value, and inturn accept the emission
     match branch_type:
         case 1:
             if R2 > Pgg(Ems.z) / Pgg_over(Ems.z):
-                    Ems.generated = False
+                    Ems.Generated = False
         case 2:
             if R2 > Pqq(Ems.z) / Pqq_over(Ems.z):
-                    Ems.enerated = False
+                    Ems.Generated = False
         case 3:
             if R2 > Pgq(Ems.z) / Pgq_over(Ems.z):
                     Ems.Generated = False
@@ -210,7 +208,7 @@ def Evolve(Q, t0, aSover):
     t0 = t0**2
     tscalcuttoff = 4
     # Set the initial emission data class values
-    Emission = emissioninfo(1, Q**2, 0, 0, True, True)
+    Emission = emissioninfo(Q**2, 1, 0, 0, True, True)
     # Loop until the evolution variable reaches the cuttoff 
     while np.sqrt(Emission.t) * Emission.z > np.sqrt( tscalcuttoff):
         # Code to determine which branch is in effect. WIP
@@ -238,7 +236,8 @@ def Evolve(Q, t0, aSover):
     return emissions
    
 emissions = []
-
+nbins = 30 # The number of bins
+Nevolve = 100000 # The number of evolutions
 # Go over and find the emissions a set amount of times
 for i in tqdm.tqdm(list(range(Nevolve))):
     emish = Evolve(Q, t0, aSover)
@@ -257,6 +256,8 @@ for var in emissions:
     Pt.append(var[2])
     Vm.append(var[3])
 
+
+
 # Get the histogram bins and edges of the z values
 dist, edges = np.histogram(zs, nbins, density = True)
 
@@ -267,13 +268,12 @@ for i in range(len(edges)-1):
 
 # Set the z values and bins arrays into a numpy array for easier use
 X = np.array(X)
+
 Y = np.array(dist) 
 testP = Pgq(X) 
 
-
 # Set the constant to normalize the bins array to the comparison array to easily compare the two
 integ = np.linalg.norm(testP)
-
 norm = np.linalg.norm(Y)
 Y = integ * Y/ norm
 
@@ -282,11 +282,19 @@ plt.plot(X, Y, label='generated', lw= 0, marker='o', markersize=4, color = 'blue
 plt.plot(X, testP, label='analytical', color = 'red')
 plt.minorticks_on()
 
-plt.xlabel('z')
-plt.ylabel('P(z)')
+plt.xlabel(r'$z$')
 plt.legend(loc='upper left')
-#plt.title('g -> qqbar')
-plt.title('g -> gg splitting function')
-#plt.title('q -> qg')
+
+# Y label and title for g -> qqbar
+plt.ylabel(r'$P_{gq}(z)$')
+plt.title(r'$g \rightarrow q\bar{q}$ Splitting Function')
+
+#Y label and title for g -> gg
+#plt.ylabel(r'$P_{gg}(z)z(1-z)$')
+#plt.title(r'$g \rightarrow gg $ Splitting Function')
+
+# Y label and title for q -> qg 
+#plt.ylabel(r'$P_{qq}(z)(1-z)$')
+#plt.title(r'$q \rightarrow qg$ Splitting Function')
 
 plt.show()
