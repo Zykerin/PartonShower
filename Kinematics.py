@@ -1,20 +1,6 @@
 import numpy as np
-from dataclasses import dataclass, replace
 import copy
 import scipy.optimize 
-import math
-
-t0 = 1 # The cuttoff scale
-Q = 1000 # The Hard scale? - the scale attributed to the hard process 
-aS= 0.118 # The coupling constant
-aSover = aS # Use the fixed overestimate alphaS constant
-# The QCD constants
-Nc = 3
-Cf = (Nc**2 -1)/ (2 * Nc) # The quark color factor
-Ca = Nc
-Tr = 1/2
-
-
 
 # Define the transverse momnentum sqaured
 def transversemmsq (t, z):
@@ -25,7 +11,7 @@ def virtualmass (t, z):
     return z * (1 - z ) * t
 # Define the upper and lower bounds of z, not the overestimate scale versiom
 def zbounds (t, t0):
-    return 1- np.sqrt( t0/t), np.sqrt(t0/t)
+    return 1- np.sqrt( t0**2/t), np.sqrt(t0**2/t)
 
 # Get the rotation matrix
 def rotationMatrix(v1, v2):
@@ -35,8 +21,9 @@ def rotationMatrix(v1, v2):
                   [0, 1, 0],
                   [0, 0, 1]]  )
     # Test if the norm of the cross product is zero
+    
     if np.linalg.norm(k) == 0:
-        return I
+        return np.identity(3)
     else:
         k = k / np.linalg.norm(k)
         # For the K matrix
@@ -73,8 +60,8 @@ def rotate(p, rotMat):
     rotp.Pz = rotvec[2]
     return  rotp
 
-# Rotate the given particles to allign with the mother particle's momentum
-def rotate_momenta(p, particles):
+# Rotate the given particles to allign with the mother particle's momentum in the lab frame
+def rotate_momenta_lab(p, particles):
     
     rotated_particles = []
     
@@ -84,7 +71,6 @@ def rotate_momenta(p, particles):
         
         i = copy.deepcopy(p)
         v = np.array([i.Px, i.Py, i.Pz])
-        #rotedVec = [(Matrix[0][0] + Matrix[0][1] + Matrix[0][1] )* v[0], (Matrix[1][0] + Matrix[1][1] + Matrix[1][2]) * v[1], (Matrix[2][0] + Matrix[2][1] + Matrix[2][2]) * v[2]]
         rotedVec = np.dot(Matrix, v)
         i.Px = rotedVec[0]
         i.Py = rotedVec[1]
@@ -104,32 +90,27 @@ def Boost_factor(k, new, old):
     beta = betamag * (k / kp) * np.array([old[0], old[1], old[2]])
     #print(betamag, new)
     if betamag >= 0:
+        #print(beta)
         return beta
     else:
         return [0, 0, 0]    
 
-# The function to boost given particles with a given boost factor beta
-def boost(particles, beta):
+# The function to boost a given particle with a given boost factor beta
+def boost(p, beta):
     
     bmag = np.sqrt(beta[0]**2 + beta[1]**2 + beta[2]**2)
     # Get the gamma factor
     gamma = 1 / np.sqrt(1 - bmag**2)
-    #print(beta)
-    boosted_particles = []
-    # Go throught the entire list of particles and boost each one
-    for p in particles:
+
+    boosted_particle = copy.deepcopy(p)
     
-        boosted_particle = copy.deepcopy(p)
-    
-        # Use the matrix of a lorentz boost from https://www.physicsforums.com/threads/general-matrix-representation-of-lorentz-boost.695941/
-        boosted_particle.Px = (-gamma * beta[0] + (1 + (gamma - 1) * beta[0]**2 / bmag**2) + (gamma - 1) * beta[0] * beta[1] / bmag**2 + (gamma - 1) * beta[0] * beta[2] / bmag**2) * p.Px
-        boosted_particle.Py = (- gamma * beta[1]  + (gamma - 1) * beta[1] * beta[0]/ bmag**2 + 1 + (gamma -1) * beta[1]**2 / bmag**2 + (gamma -1) * beta[1] * beta[2] / bmag**2) * p.Py
-        boosted_particle.Pz = (-gamma * beta[2] + (gamma - 1) * beta[2] * beta[0] /bmag**2 + (gamma -1) * beta[2] * beta[1] / bmag**2 + 1 + (gamma -1) * beta[2]**2 / bmag**2) * p.Pz
-        boosted_particle.E = (gamma - gamma * beta[0] - gamma * beta[1] - gamma * beta[2]) * p.E
-         
-        boosted_particles.append(boosted_particle)
-        
-    return boosted_particles
+    # Use the matrix of a lorentz boost from https://www.physicsforums.com/threads/general-matrix-representation-of-lorentz-boost.695941/
+    boosted_particle.Px = - gamma * beta[0] * p.E + (1 + (gamma -1) * beta[0]**2 / bmag**2) * p.Px + ( (gamma - 1) * beta[0] * beta[1] / bmag**2) * p.Py +  ( (gamma - 1) * beta[0] * beta[2] / bmag**2) * p.Pz
+    boosted_particle.Py = - gamma * beta[1] * p.E + ( (gamma -1) * beta[0] * beta[1] / bmag**2) * p.Px + ( 1 + (gamma - 1) * beta[1]**2 / bmag**2) * p.Py + ( (gamma - 1) * beta[1] * beta[2] / bmag**2) * p.Pz
+    boosted_particle.Pz = - gamma * beta[2] * p.E + ( (gamma -1) * beta[0] * beta[2] / bmag**2) * p.Px + ( (gamma - 1) * beta[2] * beta[1] / bmag**2) * p.Py + ( 1 + (gamma - 1) * beta[2] **2/ bmag**2) * p.Pz
+    boosted_particle.E = gamma * p.E - gamma * beta[0] * p.Px - gamma * beta[1] * p.Pt - gamma * beta[2] * p.Pz
+
+    return boosted_particle
 
 # The equation to numerically solve to find k
 def K_eq(k, p, q, s):
@@ -151,15 +132,12 @@ def Solve_k_factor(pj, qj, s):
     return k.x[0]
 
 # Define the function to perfom global momentum conservation on the jets and particles
-def Glob_mom_cons(Jets):
-    
-    #if len(Jets[0].Particles) == 0 :
-    #    return [Particle(1, 0, 0, 0, 0, 0, 0, 0, 0, 0)]
+def Glob_mom_cons(ShoweredParticles, Jets):
     
     pj = [] # The momenta of the parent parton
-    qj = [] # The momenta of the jets?
-    newqs = []
-    oldps = []
+    qj = [] # The momenta of the jets
+    newqs = [] # Array to hold the outgoing jet's momentum
+    oldps = [] # Array to hold the progenitor's momentum
     rotms = [] # The rotatio matrices
     # Initialize the total energy
     sqrts = 0
@@ -167,9 +145,6 @@ def Glob_mom_cons(Jets):
 
     # Iterate through the list of jets
     for jet in Jets:
-        
-        #if len(jet.Particles)==0:
-        #    continue
         
         # Append the 3-momentum of the Jet's progenitor to the 
         pj.append(jet.Progenitor.Px**2 + jet.Progenitor.Py**2 + jet.Progenitor.Pz**2)
@@ -180,6 +155,7 @@ def Glob_mom_cons(Jets):
         # Add this jet's progenitor's energy
         sqrts += jet.Progenitor.E
         
+        # Get the total jet's momentum after showering
         newq = [0, 0, 0, 0]
         # Iterate through the particles in the jet and add their momentum
         for p in jet.Particles:
@@ -191,35 +167,51 @@ def Glob_mom_cons(Jets):
         
         # Calculate the momentum and append it to the list of jet momentum
         qj2 = newq[3]**2 - newq[0]**2 - newq[1]**2 - newq[2]**2
-        if math.isnan(qj2):
+        if np.isnan(qj2):
             qj2 = 0
         Rqp = rotationMatrix(np.array([newq[0], newq[1], newq[2]]), np.array([oldp[0], oldp[1], oldp[2]] ))
-        oldps.append(oldp)
         
+        oldps.append(oldp)
         newqs.append(newq)
         qj.append(qj2)
         rotms.append(Rqp)
         
-    
     # Get the k factor
     k = Solve_k_factor(pj, qj, sqrts)
-    boosted_particles = []
-    # Iterate though the jets list and boost each
-    for i, jet in enumerate(Jets):
-        
-        if len(jet.Particles) == 0:
-            boosted_particles.append(jet.Progenitor)
-        else:
+    # List to hold the showered particles
+    showered_particles = []
+    # Go through the list of particles and add back the inital state
+    for p in ShoweredParticles:
+        if abs(p.typ) == 11:
+            showered_particles.append(p)
+
+    # Check if any of the jets have been radiated and if so, do not perform the boost and append the progenitor of each jet
+    if_ratiated = any(len(jet.Particles) > 1 for jet in Jets)
+    if if_ratiated is False:
+        for i, j in enumerate(Jets):
+            showered_particles.append(j.Particles[0])
+     
+    # Iterate though the jets list and boost each particle
+    else:
+        for i, jet in enumerate(Jets):
             
-            jet = copy.deepcopy(jet)
-           # if len(jet.Particles)==0:
-            #    continue
-        
-            for p in jet.Particles:
-                #return rotated
-                rotated = rotate(p, rotms[i])
-                # Get boosted
+            # If the jet only has the progenitor particle, append it to the list and do not boost
+            #if len(jet.Particles) == 1:
+             #   showered_particles.append(jet.Progenitor)
+            if True:
+                # Get boosted factor
                 beta = Boost_factor(k, newqs[i], oldps[i])
-                boosted_particles.append(boost([rotated], beta))
-            
-    return boosted_particles
+                # Get a copy of the jet
+                # This is for redudancy so the original jet's information is not modified 
+                jet = copy.deepcopy(jet)
+                # Go through the jet's particles and rotate and boost each
+                for p in jet.Particles:
+                    #return rotated
+                    rotated = rotate(p, rotms[i])
+    
+                    # Get the boosted particle
+                    pboosted = boost(rotated, beta)
+                    # Append to showered particles
+                    showered_particles.append(pboosted)
+                
+    return showered_particles

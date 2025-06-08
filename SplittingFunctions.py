@@ -1,6 +1,6 @@
 import numpy as np
 
-t0 = 1 # The cuttoff scale
+t0 = 0.935 # The cuttoff scale
 Q = 1000 # The Hard scale? - the scale attributed to the hard process 
 aS= 0.118 # The coupling constant
 aSover = aS # Use the fixed overestimate alphaS constant
@@ -61,4 +61,4 @@ def tGamma_qq (z, aSover):
     return -2 * Cf * (aSover/ (2 * np.pi)) * np.log(1 - z)
 # Define the inverse gamma function
 def inversetGamma_qq (z, aSover):
-    return 1 - np.exp(-z / ( 2 * Cf * (aSover/ (2 * np.pi))))
+    return 1 - np.exp(-z / ( 2 * Cf * (aSover/ (2 * np.pi ))))
