@@ -1,8 +1,5 @@
 from dataclasses import dataclass
 
-
-
-
 # A class for the emission info
 @dataclass
 class emissioninfo:
@@ -18,6 +15,7 @@ class emissioninfo:
 @dataclass
 class Particle:
     typ: int
+    status: int
     t_at_em: float
     z_at_em: float
     Pt: float
@@ -35,3 +33,10 @@ class Particle:
 class Jet:
     Progenitor: Particle
     Particles: list[Particle]
+
+
+# A data class for an event
+@dataclass
+class Event:
+    AllParticles: list[Particle]
+    Jets: list[Jet] 

@@ -61,7 +61,7 @@ def rotate(p, rotMat):
     return  rotp
 
 # Rotate the given particles to allign with the mother particle's momentum in the lab frame
-def rotate_momenta_lab(p, particles):
+def RotateMomentaLab(p, particles):
     
     rotated_particles = []
     
@@ -105,10 +105,10 @@ def boost(p, beta):
     boosted_particle = copy.deepcopy(p)
     
     # Use the matrix of a lorentz boost from https://www.physicsforums.com/threads/general-matrix-representation-of-lorentz-boost.695941/
-    boosted_particle.Px = - gamma * beta[0] * p.E + (1 + (gamma -1) * beta[0]**2 / bmag**2) * p.Px + ( (gamma - 1) * beta[0] * beta[1] / bmag**2) * p.Py +  ( (gamma - 1) * beta[0] * beta[2] / bmag**2) * p.Pz
-    boosted_particle.Py = - gamma * beta[1] * p.E + ( (gamma -1) * beta[0] * beta[1] / bmag**2) * p.Px + ( 1 + (gamma - 1) * beta[1]**2 / bmag**2) * p.Py + ( (gamma - 1) * beta[1] * beta[2] / bmag**2) * p.Pz
-    boosted_particle.Pz = - gamma * beta[2] * p.E + ( (gamma -1) * beta[0] * beta[2] / bmag**2) * p.Px + ( (gamma - 1) * beta[2] * beta[1] / bmag**2) * p.Py + ( 1 + (gamma - 1) * beta[2] **2/ bmag**2) * p.Pz
-    boosted_particle.E = gamma * p.E - gamma * beta[0] * p.Px - gamma * beta[1] * p.Pt - gamma * beta[2] * p.Pz
+    boosted_particle.Px = - gamma * beta[0] * p.E + (    1 + (gamma -1) * beta[0]**2 / bmag**2) * p.Px + ( (gamma - 1) * beta[0] * beta[1] / bmag**2) * p.Py +  ((gamma - 1) * beta[0] * beta[2] / bmag**2) * p.Pz
+    boosted_particle.Py = - gamma * beta[1] * p.E + ( (gamma -1) * beta[0] * beta[1] / bmag**2) * p.Px + (    1 + (gamma - 1) * beta[1]**2 / bmag**2) * p.Py + ( (gamma - 1) * beta[1] * beta[2] / bmag**2) * p.Pz
+    boosted_particle.Pz = - gamma * beta[2] * p.E + ( (gamma -1) * beta[0] * beta[2] / bmag**2) * p.Px + ( (gamma - 1) * beta[2] * beta[1] / bmag**2) * p.Py + (     1 + (gamma - 1) * beta[2]**2/ bmag**2) * p.Pz
+    boosted_particle.E =    gamma * p.E - gamma * beta[0] * p.Px - gamma * beta[1] * p.Py - gamma * beta[2] * p.Pz
 
     return boosted_particle
 

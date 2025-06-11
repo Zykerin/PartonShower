@@ -14,8 +14,8 @@ Tr = 1/2
 
 # The g - > gg splitting function, overestimate, integral, and integral's inverse
 def Pgg(z):
-    return  Ca * ((1 - z * (1-z))**2) / (z * (1-z))
-    #return   Ca * (z / (1.0 - z) + (1.0 - z) / z + z * (1.0 - z))
+    #return  Ca * ((1 - z * (1-z))**2) / (z * (1-z))
+    return   Ca * (z / (1.0 - z) + (1.0 - z) / z + z * (1.0 - z))
 def Pgg_over(z):
     return Ca * (1/(1-z) + 1/z)
 def tGamma_gg(z, aSover):
@@ -61,4 +61,4 @@ def tGamma_qq (z, aSover):
     return -2 * Cf * (aSover/ (2 * np.pi)) * np.log(1 - z)
 # Define the inverse gamma function
 def inversetGamma_qq (z, aSover):
-    return 1 - np.exp(-z / ( 2 * Cf * (aSover/ (2 * np.pi ))))
+    return 1 - np.exp(-z / ( 2 * Cf * (aSover/ (2 * np.pi))))
