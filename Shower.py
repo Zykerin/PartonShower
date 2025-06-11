@@ -5,8 +5,32 @@ from Classes import * # Import the classes
 from Constants import * # Import the constants
 from SplittingFunctions import * # Import the splitting functions
 from Kinematics import * # Import the kinematic functions
+from alphaS import * # ALphaS coupling constant
+import math
 
 rand.seed(12345)
+
+# The function for the scale choice of alphaS
+def ScaleOfalphaS(t, z):
+    return z * (1-z) * np.sqrt(t)
+
+# Function to get the true value of alphaS using the PDF alphaS
+def GetalphaS(t, z, Qcut, aSover):
+    scale = ScaleOfalphaS(t, z)
+    if scale < Qcut:
+        return aS.alphasQ(Qcut)
+    return aS.alphasQ(scale)
+
+# The function to determine the alphaS overestimate
+def GetalphaSOver(Qcut):
+    minscale = Qcut
+    if minscale < Qcut:
+        scale = minscale
+    else:
+        scale = Qcut
+    
+    aSover = aS.alphasQ(scale)
+    return aSover
 
 
 # Define the E(t) or Emission scale function
@@ -48,6 +72,7 @@ def GenerateEmissions (Q, Qcut, aSover, tfac, branch_type):
     R1 = rand.random()
     R2 = rand.random()
     R3 = rand.random()
+    R4 = rand.random()
     # Get an empty emission object to hold emission data.
     Ems= emissioninfo(0,1, 0, 0, 0, True, True)
     
@@ -61,6 +86,7 @@ def GenerateEmissions (Q, Qcut, aSover, tfac, branch_type):
         case 2:
             
             Ems.t, Ems.ContinueEvolve = tEmission(Q, Qcut, R1, aSover, tfac, tGamma_qq)
+
             
         case 3:
             
@@ -99,6 +125,8 @@ def GenerateEmissions (Q, Qcut, aSover, tfac, branch_type):
             Ems.z = zEmission(Ems.t, Qcut, R2, aSover, tGamma_qg, inversetGamma_qg)
             
             
+
+    
     # Get the transverse momentum squared and virtual mass squared
     Ems.Ptsq = transversemmsq(Ems.t, Ems.z)
     Ems.Vmsq = virtualmass(Ems.t, Ems.z)
@@ -130,7 +158,9 @@ def GenerateEmissions (Q, Qcut, aSover, tfac, branch_type):
             
             if R3 > Pqg(Ems.z) / Pqg_over(Ems.z):
                 Ems.Generated = False
-         
+    # Compare the alphaS value and overestimate to a random number to veto according to it
+    if R4 > GetalphaS(Ems.t, Ems.z, Qcut, aSover) / aSover:
+        Ems.Generated = False 
     # If any of the tests are true, then there is no emission and return these values
     if Ems.Generated == False:
         Ems.z = 1
@@ -166,7 +196,7 @@ def Evolve(pa, Qc, aSover):
         # This then stops this branch's evolution
         if Emission.ContinueEvolve == False:
             # Add the magnitude of the quark with respect to its origina direction
-            ps.append(Particle(21, 1, np.sqrt(Emission.t), Emission.z, 0, 0, 0, pmag, 0, pmag, 0, False))
+            #ps.append(Particle(21, 1, np.sqrt(Emission.t), Emission.z, 0, 0, 0, pmag, 0, pmag, 0, False))
             pa.ContinueEvolution = False
             return ps
         
@@ -189,7 +219,7 @@ def Evolve(pa, Qc, aSover):
             pmag = Emission.z * pmag
             ps.append(p)
     # Add the magnitude of the quark with respect to its origina direction.
-    ps.append(Particle(21, np.sqrt(Emission.t), Emission.z, 0, 0, 0, pmag, 0, pmag, 0, False))
+    #ps.append(Particle(21, np.sqrt(Emission.t), Emission.z, 0, 0, 0, pmag, 0, pmag, 0, False))
     return ps
 
 # New function to evolve a particle with the competition.
@@ -376,7 +406,7 @@ def Shower_Evens(Event, Qmin, aSover):
     Jets = []
     # Go through the first event and shower each particle
     # This was for testing/comparison
-    for i in Event[0].Jets:
+    for i in Event.Jets:
         # Test to only evolve quarks
         if abs(i.typ) == 11:
             AllParticles.append(i)

@@ -2,7 +2,7 @@ from alphaS import * # ALphaS coupling constant
 import numpy as  np
 import matplotlib.pyplot as plt
 from tqdm import tqdm
-import sys
+import sys 
 from LHEWriter import * # part to write to a lhe file
 from LHEReader import * # part to read the lhe file
 from SplittingFunctions import * # Splitting functions file
@@ -11,7 +11,8 @@ from Classes import * # File containing data classes
 from Constants import * # File containing the constants
 from Shower import * # File containing the showering functions
 
-
+aSover = GetalphaSOver(Qc)
+#aSover = 0.118
 # Get the input file, read and then parse it
 inputfile = 'eejj_ECM206.lhe.gz'
 
@@ -19,7 +20,7 @@ events, weights, multiweights = readlhefile(inputfile)
 
 emissions = [] 
 nbins = 30 # The number of bins
-Nevolve = 10000 # The number of evolutions
+Nevolve = 100000 # The number of evolutions
 
 # Make the events in a for that works with my program. Dumb I know
 Events = []
@@ -33,26 +34,19 @@ for event in events:
         newevent.Jets.append(P)
     Events.append(newevent)
 
-
+'''
 ShoweredEvents = []
 for event in tqdm(Events):
     
     Ev = ShowerEvent(event, Qc, aSover)
     ShoweredEvents.append(Ev)
 
+pss = []
+for ev in tqdm(Events):
+    ps = Shower_Evens(ev, Qc, aSover)
+    pss.append(ps)
+'''
 
-#ShoweredParticles, ShoweredJets = Shower_Evens(Events, Qc, aSover)
-sys.exit()
-t = []
-
-for p in Events[3].Jets:
-    if abs(p.typ) == 1:
-        t.append(p)
-        continue
-    ps = Evolve(p, Qc, aSover)
-    t.append(ps)
-
-sys.exit()
 #print(check_mom_cons(showered_particles))
 # Old test for proper generation of splitting functions
 Pa = Particle(1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0)
@@ -86,8 +80,8 @@ for i in range(len(edges)-1):
 # Set the z values and bins arrays into a numpy array for easier use
 X = np.array(X)
 
-Y = np.array(dist)
-testP = Pgq(X) 
+Y = np.array(dist) * (1 - X)
+testP = Pqq(X) * (1 - X)
 
 # Set the constant to normalize the bins array to the comparison array to easily compare the two
 integ = np.linalg.norm(testP)
