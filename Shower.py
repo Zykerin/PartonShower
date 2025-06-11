@@ -10,33 +10,24 @@ import math
 
 rand.seed(12345)
 
-# The function for the scale choice of alphaS
-def ScaleOfalphaS(t, z):
-    return z * (1-z) * np.sqrt(t)
 
 # Function to get the true value of alphaS using the PDF alphaS
-def GetalphaS(t, z, Qcut, aSover):
-    scale = ScaleOfalphaS(t, z)
+def GetalphaS(t, z, Qcut): 
+    scale = z * (1-z) * np.sqrt(t) # = pT of emission
     if scale < Qcut:
         return aS.alphasQ(Qcut)
     return aS.alphasQ(scale)
 
 # The function to determine the alphaS overestimate
 def GetalphaSOver(Qcut):
-    minscale = Qcut
-    if minscale < Qcut:
-        scale = minscale
-    else:
-        scale = Qcut
-    
-    aSover = aS.alphasQ(scale)
+    aSover = aS.alphasQ(Qcut) 
     return aSover
 
 
 # Define the E(t) or Emission scale function
-def E(t, Q, Rp, aSover, t0, tGamma):
+def E(t, Q, Rp, aSover, Qcut, tGamma):
     
-    zup, zlow = zbounds(t, t0)
+    zup, zlow = zbounds(t, Qcut)
     
     r =  tGamma(zup, aSover) - tGamma(zlow, aSover)
     return np.log(t / Q**2) -  (1 /r) * np.log(Rp)
@@ -45,15 +36,15 @@ def E(t, Q, Rp, aSover, t0, tGamma):
 
 # Define the function to determine the t value
 # This is doen by numerically solving the emission scale function
-def tEmission(Q, Qc, R2, aSover, tfac, tGamma):
+def tEmission(Q, Qcut, R2, aSover, tfac, tGamma):
     prec = 1E-4 # Precision for the solution
-    argsol = (Q, R2, aSover, Qc, tGamma)
+    argsol = (Q, R2, aSover, Qcut, tGamma)
 
     ContinuedEvolve = True
-    t = scipy.optimize.ridder(E, tfac * Qc**2, Q**2, args = argsol, xtol= prec)
+    t = scipy.optimize.ridder(E, tfac * Qcut**2, Q**2, args = argsol, xtol= prec)
     
     # If a root is not found, stop the evolution for this branch
-    if abs(E(t, Q, R2, aSover, Qc, tGamma)) > prec:
+    if abs(E(t, Q, R2, aSover, Qcut, tGamma)) > prec:
         t = Q**2
         ContinuedEvolve = False
     return t, ContinuedEvolve
@@ -86,7 +77,6 @@ def GenerateEmissions (Q, Qcut, aSover, tfac, branch_type):
         case 2:
             
             Ems.t, Ems.ContinueEvolve = tEmission(Q, Qcut, R1, aSover, tfac, tGamma_qq)
-
             
         case 3:
             
@@ -158,9 +148,13 @@ def GenerateEmissions (Q, Qcut, aSover, tfac, branch_type):
             
             if R3 > Pqg(Ems.z) / Pqg_over(Ems.z):
                 Ems.Generated = False
+                
     # Compare the alphaS value and overestimate to a random number to veto according to it
-    if R4 > GetalphaS(Ems.t, Ems.z, Qcut, aSover) / aSover:
+    if R4 > GetalphaS(Ems.t, Ems.z, Qcut) / aSover:
+        #print('hit alphaS scale')
         Ems.Generated = False 
+        
+    
     # If any of the tests are true, then there is no emission and return these values
     if Ems.Generated == False:
         Ems.z = 1
@@ -189,9 +183,8 @@ def Evolve(pa, Qc, aSover):
     # Evolve the particle until the emission is past the cuttoff or another condition is met.
     while np.sqrt(Emission.t) * Emission.z > np.sqrt( tscalcuttoff * t_min) :
         # Get the emission values.
-        
         Emission = GenerateEmissions(np.sqrt(Emission.t) * Emission.z, np.sqrt(t_min), aSover, fac_t, branch_type)
-        #print(Emission.t, Emission.z)
+        
         # Terminate the evolution if a requirement is met.
         # This then stops this branch's evolution
         if Emission.ContinueEvolve == False:
@@ -202,13 +195,17 @@ def Evolve(pa, Qc, aSover):
         
         # Return emssions if the current one is past the cutt offf
         if Emission.t < tscalcuttoff * t_min:
+            print('Hit Cuttoff, stopping Evolution')
             pa.ContinueEvolution = False
             return ps
+        
         # Append the emissions and then continue
         if Emission.z != 1:
+            
             Pt = np.sqrt(Emission.Ptsq) 
             Emission.phi = (2*rand.random() - 1)*np.pi # Generated phi value
             Ei = np.sqrt(( 1- Emission.z)**2 * pmag**2 + Pt**2)
+            
             # Depending on the branch, append the appropiate particle
             if branch_type == 1 or 2:
                 p = Particle(21, 1, np.sqrt(Emission.t), Emission.z, Pt, Pt * np.cos(Emission.phi), Pt * np.sin(Emission.phi), (1 -Emission.z) * pmag, 0, Ei, Emission.phi, Emission.ContinueEvolve)
@@ -218,6 +215,7 @@ def Evolve(pa, Qc, aSover):
             # Resacale the magnitude of the momnetum with the z emission
             pmag = Emission.z * pmag
             ps.append(p)
+    
     # Add the magnitude of the quark with respect to its origina direction.
     #ps.append(Particle(21, np.sqrt(Emission.t), Emission.z, 0, 0, 0, pmag, 0, pmag, 0, False))
     return ps
@@ -410,7 +408,7 @@ def Shower_Evens(Event, Qmin, aSover):
         # Test to only evolve quarks
         if abs(i.typ) == 11:
             AllParticles.append(i)
-            pass
+            continue
         else:
             ps = Evolve(i, Qc, aSover )
             

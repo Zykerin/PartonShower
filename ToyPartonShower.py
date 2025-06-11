@@ -20,7 +20,7 @@ events, weights, multiweights = readlhefile(inputfile)
 
 emissions = [] 
 nbins = 30 # The number of bins
-Nevolve = 100000 # The number of evolutions
+Nevolve = 10000 # The number of evolutions
 
 # Make the events in a for that works with my program. Dumb I know
 Events = []
@@ -40,7 +40,10 @@ for event in tqdm(Events):
     
     Ev = ShowerEvent(event, Qc, aSover)
     ShoweredEvents.append(Ev)
+'''
 
+
+'''
 pss = []
 for ev in tqdm(Events):
     ps = Shower_Evens(ev, Qc, aSover)
@@ -59,6 +62,15 @@ ts = []
 zs = []
 Pt = []
 Vm = []
+'''
+for ev in pss:
+    for p in ev[0]:
+        ts.append(p.t_at_em)
+        zs.append(p.z_at_em)
+        Pt.append(p.Pt)
+        Vm.append(0)
+'''
+
 
 # Get all the physicals
 for particle in emissions:
