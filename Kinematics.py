@@ -13,31 +13,31 @@ def virtualmass (t, z):
 def zbounds (t, t0):
     return 1- np.sqrt( t0**2/t), np.sqrt(t0**2/t)
 
-# Get the rotation matrix
+# Get the rotation matrix for two given vectors.
 def rotationMatrix(v1, v2):
+    # Get the cross product of the two vectors.
     k = np.cross(v1, v2)
-    # Get the identity matrix
-    I = np.array([[1, 0, 0],
-                  [0, 1, 0],
-                  [0, 0, 1]]  )
-    # Test if the norm of the cross product is zero
-    
+    # Get the identity matrix.
+    I = np.identity(3)
+   
+    # Test if the norm of the cross product is zero.
     if np.linalg.norm(k) == 0:
-        return np.identity(3)
+        return I
     else:
+        # Unit vector of k.
         k = k / np.linalg.norm(k)
-        # For the K matrix
+        # Get the K matrix.
         K = np.array([[0, -k[2], k[1]], 
                       [k[2], 0, -k[0]],
                       [-k[1], k[0], 0]])
-        # Get the angle between the two vectors
+        # Get the angle between the two vectors.
         theta = np.arccos(np.clip(np.dot(v1/np.linalg.norm(v1), v2/ np.linalg.norm(v2)), -1, 1))
         
-        # Get the rotation matrix
+        # Get the rotation matrix.
         RotMat = I + np.sin(theta) * K + (1 - np.cos(theta)) *np.dot(K, K)
         return RotMat
 
-# Function to check the momentum conservation
+# Function to check the momentum conservation.
 def check_mom_cons(Event):
     total = [0, 0, 0]
     # Go through the list of events
@@ -48,7 +48,7 @@ def check_mom_cons(Event):
     
     return total
 
-# Rotate a given particle with a given rotation matrix
+# Rotate a given particle with a given rotation matrix.
 def rotate(p, rotMat):
     
     pvec = [p.Px, p.Py, p.Pz]
@@ -80,7 +80,7 @@ def RotateMomentaLab(p, particles):
 
 # Get the boost factor beta for the outgouting jet (new) and parent jet (old)
 def Boost_factor(k, new, old):
-    #print(new, old)
+
     qs = new[0]**2 + new[1]**2 + new[2]**2
     q = np.sqrt(qs)
     Q2 = new[3]**2 - new[0]**2 - new[1]**2 - new[2]**2
@@ -88,9 +88,8 @@ def Boost_factor(k, new, old):
     kps= kp**2
     betamag = (q * new[3] - kp * np.sqrt(kps + Q2)) / (kps + qs + Q2)
     beta = betamag * (k / kp) * np.array([old[0], old[1], old[2]])
-    #print(betamag, new)
+
     if betamag >= 0:
-        #print(beta)
         return beta
     else:
         return [0, 0, 0]    
@@ -194,24 +193,20 @@ def Glob_mom_cons(ShoweredParticles, Jets):
     # Iterate though the jets list and boost each particle
     else:
         for i, jet in enumerate(Jets):
-            
-            # If the jet only has the progenitor particle, append it to the list and do not boost
-            #if len(jet.Particles) == 1:
-             #   showered_particles.append(jet.Progenitor)
-            if True:
-                # Get boosted factor
-                beta = Boost_factor(k, newqs[i], oldps[i])
-                # Get a copy of the jet
-                # This is for redudancy so the original jet's information is not modified 
-                jet = copy.deepcopy(jet)
-                # Go through the jet's particles and rotate and boost each
-                for p in jet.Particles:
-                    #return rotated
-                    rotated = rotate(p, rotms[i])
-    
-                    # Get the boosted particle
-                    pboosted = boost(rotated, beta)
-                    # Append to showered particles
-                    showered_particles.append(pboosted)
+
+            # Get boosted factor
+            beta = Boost_factor(k, newqs[i], oldps[i])
+            # Get a copy of the jet
+            # This is for redudancy so the original jet's information is not modified 
+            jet = copy.deepcopy(jet)
+            # Go through the jet's particles and rotate and boost each
+            for p in jet.Particles:
+                #return rotated
+                rotated = rotate(p, rotms[i])
+
+                # Get the boosted particle
+                pboosted = boost(rotated, beta)
+                # Append to showered particles
+                showered_particles.append(pboosted)
                 
     return showered_particles

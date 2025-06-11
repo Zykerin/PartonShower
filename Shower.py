@@ -12,6 +12,7 @@ rand.seed(12345)
 
 
 # Function to get the true value of alphaS using the PDF alphaS
+# This program is using the pT scale
 def GetalphaS(t, z, Qcut): 
     scale = z * (1-z) * np.sqrt(t) # = pT of emission
     if scale < Qcut:
@@ -20,8 +21,7 @@ def GetalphaS(t, z, Qcut):
 
 # The function to determine the alphaS overestimate
 def GetalphaSOver(Qcut):
-    aSover = aS.alphasQ(Qcut) 
-    return aSover
+    return aS.alphasQ(Qcut) 
 
 
 # Define the E(t) or Emission scale function
@@ -64,10 +64,10 @@ def GenerateEmissions (Q, Qcut, aSover, tfac, branch_type):
     R2 = rand.random()
     R3 = rand.random()
     R4 = rand.random()
+    
     # Get an empty emission object to hold emission data.
     Ems= emissioninfo(0,1, 0, 0, 0, True, True)
-    
-    #print(Q, Qcut, R1, aSover, tfac)
+
     # Get the t emission value
     match branch_type:
         case 1:
@@ -113,9 +113,6 @@ def GenerateEmissions (Q, Qcut, aSover, tfac, branch_type):
         case 4:
             
             Ems.z = zEmission(Ems.t, Qcut, R2, aSover, tGamma_qg, inversetGamma_qg)
-            
-            
-
     
     # Get the transverse momentum squared and virtual mass squared
     Ems.Ptsq = transversemmsq(Ems.t, Ems.z)
@@ -151,7 +148,6 @@ def GenerateEmissions (Q, Qcut, aSover, tfac, branch_type):
                 
     # Compare the alphaS value and overestimate to a random number to veto according to it
     if R4 > GetalphaS(Ems.t, Ems.z, Qcut) / aSover:
-        #print('hit alphaS scale')
         Ems.Generated = False 
         
     
@@ -166,6 +162,7 @@ def GenerateEmissions (Q, Qcut, aSover, tfac, branch_type):
 # The function to evolve a certain particle
 # This is the old one for testing
 def Evolve(pa, Qc, aSover):
+    
     # Set the branch type for now. This is meant so one can easily switch splitting functions for testing
     # Cases: 1: g -> gg, 2: q -> qg, 3: g -> qqbar, 4: q -> gq
     branch_type = 2
@@ -177,6 +174,7 @@ def Evolve(pa, Qc, aSover):
     # Set the initial emission data class values.
     # These will be written over later
     Emission = emissioninfo(pa.E**2, 1, 0, 0, 0, True, True)
+    # List to hold the particles/emisisons
     ps = []
     # The magnitude of the momentum of the parent particle
     pmag = np.sqrt(pa.Px**2 + pa.Py**2 + pa.Pz**2)
@@ -234,7 +232,8 @@ def EvolveParticle(Pa, Pb, Pc, Qc, aSover):
     # Set the evolution variable from the parent particle's information
     Q = np.sqrt(Pa.t_at_em) * Pa.z_at_em
     
-    # Loop until the evolution variable reaches the cuttoff 
+    # Loop until either the particle evolution is terminated or an emission is generated
+    # This is an implementation of a do while loop from another codebase 
     while True:
         # If the evolution variables is below the cutoff, 
         if Q < np.sqrt(tscalcuttoff * Qc**2):
@@ -256,6 +255,7 @@ def EvolveParticle(Pa, Pb, Pc, Qc, aSover):
             # Get emission for g -> gg
             branch_type = 1
             Emission = GenerateEmissions(Q, np.sqrt(tMin), aSover, fac_t, branch_type)
+            
             # Set the child particles type
             Pb.typ = 21
             Pc.typ = 21
@@ -289,7 +289,8 @@ def EvolveParticle(Pa, Pb, Pc, Qc, aSover):
     if Emission.ContinueEvolve == False:
         Pa.ContinueEvolution = False
         return
-    Emission.phi = (2*rand.random() - 1)*np.pi # Generated phi value
+    # Generated the phi value for this emission
+    Emission.phi = (2*rand.random() - 1)*np.pi 
     
     # Set the children particles' t and z emission values
     Pb.t_at_em = (Emission.t)
@@ -307,22 +308,19 @@ def EvolveParticle(Pa, Pb, Pc, Qc, aSover):
     Pb.Pz = Emission.z* pmag
     Pb.E = np.sqrt(Pb.Px**2 + Pb.Py**2 + Pb.Pz**2)
     
-    Pb.status = 1
-    Pc.status = 1
-    
-    Pb.Pt = Pt
-    Pc.Pt = Pt
-    
-    Pb.ContinueEvolution = True
-    Pc.ContinueEvolution = True
-    
     # Set the c child particle's momentum and energy values.
     Pc.Px = -Pt * np.cos(Emission.phi)
     Pc.Py = -Pt * np.sin(Emission.phi)
     Pc.Pz = (1- Emission.z) * pmag
     Pc.E = np.sqrt(Pc.Px**2 + Pc.Py**2 + Pc.Pz**2)
     
-    # Set the mass of each particle to 0 for now.
+    # Set the other variables for the particles
+    Pb.status = 1
+    Pc.status = 1
+    Pb.Pt = Pt
+    Pc.Pt = Pt
+    Pb.ContinueEvolution = True
+    Pc.ContinueEvolution = True
     Pb.m = 0
     Pc.m = 0
     
@@ -397,7 +395,7 @@ def ShowerEvent(event, Qmin, aSover):
     return NewEvent
 
 # This is for testing as this does not involve the new Evolution function with competition
-# Define the function to shower the events
+# Define the testing function to shower the events
 def Shower_Evens(Event, Qmin, aSover):
     
     AllParticles = []

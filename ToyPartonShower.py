@@ -11,6 +11,7 @@ from Classes import * # File containing data classes
 from Constants import * # File containing the constants
 from Shower import * # File containing the showering functions
 
+# Get the alphaS overestimate
 aSover = GetalphaSOver(Qc)
 #aSover = 0.118
 # Get the input file, read and then parse it
@@ -18,9 +19,9 @@ inputfile = 'eejj_ECM206.lhe.gz'
 
 events, weights, multiweights = readlhefile(inputfile)
 
-emissions = [] 
+
 nbins = 30 # The number of bins
-Nevolve = 10000 # The number of evolutions
+Nevolve = 100000 # The number of evolutions
 
 # Make the events in a for that works with my program. Dumb I know
 Events = []
@@ -54,6 +55,7 @@ for ev in tqdm(Events):
 # Old test for proper generation of splitting functions
 Pa = Particle(1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0)
 Pa.E = Q
+emissions = [] 
 for i in tqdm(list(range(Nevolve))):
    ps = Evolve(Pa, Qc, aSover)
    emissions = emissions + ps
