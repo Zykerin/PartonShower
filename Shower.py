@@ -187,7 +187,7 @@ def Evolve(pa, Qc, aSover):
         # This then stops this branch's evolution
         if Emission.ContinueEvolve == False:
             # Add the magnitude of the quark with respect to its origina direction
-            #ps.append(Particle(21, 1, np.sqrt(Emission.t), Emission.z, 0, 0, 0, pmag, 0, pmag, 0, False))
+            ps.append(Particle(21, 1, np.sqrt(Emission.t), Emission.z, 0, 0, 0, pmag, 0, pmag, 0, False))
             pa.ContinueEvolution = False
             return ps
         
@@ -215,7 +215,7 @@ def Evolve(pa, Qc, aSover):
             ps.append(p)
     
     # Add the magnitude of the quark with respect to its origina direction.
-    #ps.append(Particle(21, np.sqrt(Emission.t), Emission.z, 0, 0, 0, pmag, 0, pmag, 0, False))
+    ps.append(Particle(21, np.sqrt(Emission.t), Emission.z, 0, 0, 0, pmag, 0, pmag, 0, False))
     return ps
 
 # New function to evolve a particle with the competition.

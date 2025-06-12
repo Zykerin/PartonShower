@@ -16,6 +16,7 @@ aSover = GetalphaSOver(Qc)
 #aSover = 0.118
 # Get the input file, read and then parse it
 inputfile = 'eejj_ECM206.lhe.gz'
+#inputfile = 'LHE-LEP.lhe'
 
 events, weights, multiweights = readlhefile(inputfile)
 
@@ -51,7 +52,6 @@ for ev in tqdm(Events):
     pss.append(ps)
 '''
 
-#print(check_mom_cons(showered_particles))
 # Old test for proper generation of splitting functions
 Pa = Particle(1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0)
 Pa.E = Q
@@ -59,6 +59,7 @@ emissions = []
 for i in tqdm(list(range(Nevolve))):
    ps = Evolve(Pa, Qc, aSover)
    emissions = emissions + ps
+
 # Set the arrays to obtain the physicals
 ts = []
 zs = []
@@ -70,16 +71,39 @@ for ev in pss:
         ts.append(p.t_at_em)
         zs.append(p.z_at_em)
         Pt.append(p.Pt)
-        Vm.append(0)
 '''
 
+'''
+# Create the momenta in a form that can be read by the LHE writer
+# This program was given by Dr. P
+ShoweredEvents = []
 
+for event in pss:
+    ShoweredParticles = []
+    for p in event.Particles:
+        ShoweredParticles.append([p.typ, p.status, p.Px, p.Py, p.Pz, p.E, p.m])
+    ShoweredEvents.append(ShoweredParticles)
+    
+# construct the LHE writer:
+debug = False
+sigma = 1.2
+error = 0.2
+ECM = 206
+outlhe = outputfile.replace('.hepmc','_pyr.lhe')
+fout = init_lhe(outlhe, sigma, error, ECM)
+write_lhe(fout, ShoweredEvents, ECM**2, debug)
+finalize_lhe    
+'''
+
+'''
 # Get all the physicals
 for particle in emissions:
     ts.append(particle.t_at_em)
     zs.append(particle.z_at_em)
     Pt.append(particle.Pt)
     Vm.append(0)
+'''
+
 
 
 
