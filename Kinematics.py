@@ -201,7 +201,6 @@ def Glob_mom_cons(ShoweredParticles, Jets):
             jet = copy.deepcopy(jet)
             # Go through the jet's particles and rotate and boost each
             for p in jet.Particles:
-                #return rotated
                 rotated = rotate(p, rotms[i])
 
                 # Get the boosted particle

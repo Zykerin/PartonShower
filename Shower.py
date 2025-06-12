@@ -162,7 +162,6 @@ def GenerateEmissions (Q, Qcut, aSover, tfac, branch_type):
 # The function to evolve a certain particle
 # This is the old one for testing
 def Evolve(pa, Qc, aSover):
-    
     # Set the branch type for now. This is meant so one can easily switch splitting functions for testing
     # Cases: 1: g -> gg, 2: q -> qg, 3: g -> qqbar, 4: q -> gq
     branch_type = 2
@@ -170,7 +169,6 @@ def Evolve(pa, Qc, aSover):
     tscalcuttoff = 4 # ACtual cuttoff
     # The miminum evolution scale
     t_min = Qc**2
-
     # Set the initial emission data class values.
     # These will be written over later
     Emission = emissioninfo(pa.E**2, 1, 0, 0, 0, True, True)
@@ -187,7 +185,7 @@ def Evolve(pa, Qc, aSover):
         # This then stops this branch's evolution
         if Emission.ContinueEvolve == False:
             # Add the magnitude of the quark with respect to its origina direction
-            ps.append(Particle(21, 1, np.sqrt(Emission.t), Emission.z, 0, 0, 0, pmag, 0, pmag, 0, False))
+            ps.append(Particle(pa.typ, 1, np.sqrt(Emission.t), Emission.z, 0, 0, 0, pmag, 0, pmag, 0, False))
             pa.ContinueEvolution = False
             return ps
         
@@ -205,7 +203,7 @@ def Evolve(pa, Qc, aSover):
             Ei = np.sqrt(( 1- Emission.z)**2 * pmag**2 + Pt**2)
             
             # Depending on the branch, append the appropiate particle
-            if branch_type == 1 or 2:
+            if branch_type == 2:
                 p = Particle(21, 1, np.sqrt(Emission.t), Emission.z, Pt, Pt * np.cos(Emission.phi), Pt * np.sin(Emission.phi), (1 -Emission.z) * pmag, 0, Ei, Emission.phi, Emission.ContinueEvolve)
             elif branch_type == 3:
                 p = Particle(-3, 1, np.sqrt(Emission.t), Emission.z, Pt, Pt * np.cos(Emission.phi), Pt * np.sin(Emission.phi), (1 -Emission.z) * pmag, 0, Ei, Emission.phi, Emission.ContinueEvolve)
@@ -215,14 +213,13 @@ def Evolve(pa, Qc, aSover):
             ps.append(p)
     
     # Add the magnitude of the quark with respect to its origina direction.
-    ps.append(Particle(21, np.sqrt(Emission.t), Emission.z, 0, 0, 0, pmag, 0, pmag, 0, False))
+    ps.append(Particle(pa.typ, 1, np.sqrt(Emission.t), Emission.z, 0, 0, 0, pmag, 0, pmag, 0, False))
     return ps
 
 # New function to evolve a particle with the competition.
 # I figured it would be better to create a seperate function so I can switch back to the old one for testing.
 # The function to evolve a certain particle
 def EvolveParticle(Pa, Pb, Pc, Qc, aSover):
-    
     tMin = Qc**2
     fac_t = 3.999 # Minimum value for the cutoff to try emissions
     tscalcuttoff = 4# ACtual cuttoff
@@ -267,7 +264,6 @@ def EvolveParticle(Pa, Pb, Pc, Qc, aSover):
             
             # Go through each of the quark flavors and test whether one is emitted and the t emission is greater than the g -> gg t emission
             for flavor in range(1, 6):
-
                 # Get emission for g -> qqbar
                 branch_type = 3
                 EmissionTemp = GenerateEmissions(Q, np.sqrt(tMin), aSover, fac_t, branch_type)
@@ -407,7 +403,7 @@ def Shower_Evens(Event, Qmin, aSover):
         if abs(i.typ) == 11:
             AllParticles.append(i)
             continue
-        else:
+        elif abs(i.typ) < 6 and abs(i.typ) > 0 and i.status==1:
             ps = Evolve(i, Qc, aSover )
             
             # Rotate the particle with the lab
