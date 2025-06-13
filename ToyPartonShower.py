@@ -15,10 +15,11 @@ from Shower import * # File containing the showering functions
 aSover = GetalphaSOver(Qc)
 #aSover = 0.118
 # Get the input file, read and then parse it
-inputfile = 'eejj_ECM206.lhe.gz'
-#inputfile = 'LHE-LEP.lhe'
+#inputfile = 'eejj_ECM206.lhe.gz'
+inputfile = 'eejj_ECM206_1E6.lhe.gz'
 
-outputfile = 'CCode.lhe'
+# Make the output file
+outputfile = 'CCodeFullerShower1E6.lhe'
 
 
 events, weights, multiweights = readlhefile(inputfile)
@@ -39,20 +40,40 @@ for event in events:
         newevent.Jets.append(P)
     Events.append(newevent)
 
-'''
+
 ShoweredEvents = []
 for event in tqdm(Events):
-    
     Ev = ShowerEvent(event, Qc, aSover)
     ShoweredEvents.append(Ev)
+
+ShoweredEV = []
+
+# Create momenta in the formn that can be read by the LHE writer from the fuller shower
+for ev in ShoweredEvents:
+    ShoweredParticles = []
+    for p in ev.AllParticles:
+        ShoweredParticles.append([p.typ, p.status, p.Px, p.Py, p.Pz, p.E, p.m])
+    ShoweredEV.append(ShoweredParticles)
+
+
 '''
-
-
-
 pss = []
 for ev in tqdm(Events):
     ps = Shower_Evens(ev, Qc, aSover)
     pss.append(ps)
+'''
+'''
+# Create the momenta in a form that can be read by the LHE writer
+# This program was given by Dr. P
+ShoweredEvents = []
+
+for event in pss:
+    ShoweredParticles = []
+    for p in event[0]:
+        ShoweredParticles.append([p.typ, p.status, p.Px, p.Py, p.Pz, p.E, p.m])
+    ShoweredEvents.append(ShoweredParticles)
+    '''
+
 
 '''
 # Old test for proper generation of splitting functions
@@ -77,16 +98,6 @@ for ev in pss:
 '''
 
 
-# Create the momenta in a form that can be read by the LHE writer
-# This program was given by Dr. P
-ShoweredEvents = []
-
-for event in pss:
-    ShoweredParticles = []
-    for p in event[0]:
-        ShoweredParticles.append([p.typ, p.status, p.Px, p.Py, p.Pz, p.E, p.m])
-    ShoweredEvents.append(ShoweredParticles)
-    
 # construct the LHE writer:
 debug = False
 sigma = 1.2
@@ -94,7 +105,7 @@ error = 0.2
 ECM = 206
 outlhe = outputfile.replace('.hepmc','_pyr.lhe')
 fout = init_lhe(outlhe, sigma, error, ECM)
-write_lhe(fout, ShoweredEvents, ECM**2, debug)
+write_lhe(fout, ShoweredEV, ECM**2, debug)
 finalize_lhe    
 
 
