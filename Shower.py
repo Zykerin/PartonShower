@@ -1,87 +1,18 @@
 import numpy as np
 import random as rand
-import scipy.optimize 
 from Classes import * # Import the classes
 from Constants import * # Import the constants
 from SplittingFunctions import * # Import the splitting functions
 from Kinematics import * # Import the kinematic functions
 from alphaS import * # ALphaS coupling constant
+from ShowerHelpers import *
 import math
 import sys
 rand.seed(12345)
 
 
 
-# Function to determine the starting evolution scale
-def EvolutionScale(p1, p2):
-    
-    match EvolveType :
-        case 'Old':
-            return [p1.E**2, p2.E**2]
-        case 'QTilde':
-            Q2 = (0.5 * p1.E + 0.5* p2.E)**2 - (p1.Px + p2.Px)**2 - (p1.Py + p2.Py)**2 - (p1.Pz + p2.Pz)**2
 
-            print(Q2, p1.E**2)
-            #sys.exit()
-            
-            b = p1.m**2 / Q2
-            c = p2.m**2/Q2
-            lam = np.sqrt(1 + b**2 + c**2 - 2*b - 2*c - 2*b*c)
-            ktildb = 0.5 * (1 + b - c + lam)
-            ktildc = 0.5 * (1 - b + c + lam)
-            
-            Qtilde = [ np.sqrt(Q2 * ktildb), np.sqrt(Q2 * ktildc)]
-            return Qtilde
-
-
-
-# Function to get the true value of alphaS using the PDF alphaS
-# This program is using the pT scale
-def GetalphaS(t, z, Qcut): 
-    scale = z * (1-z) * np.sqrt(t) # = pT of emission
-    if scale < Qcut:
-        return aS.alphasQ(Qcut)
-    return aS.alphasQ(scale)
-
-# The function to determine the alphaS overestimate
-def GetalphaSOver(Qcut):
-    return aS.alphasQ(Qcut) 
-
-
-# Define the E(t) or Emission scale function
-def E(t, Q, Rp, aSover, Qcut, tGamma, mu, branchType):
-    
-    #zup, zlow = zbounds(t, Qcut)
-    zup, zlow = zBounds(mu, t, Qcut, branchType)
-    r =  tGamma(zup, aSover) - tGamma(zlow, aSover)
-    return np.log(t / Q**2) -  (1 /r) * np.log(Rp)
-
-
-
-# Define the function to determine the t value
-# This is doen by numerically solving the emission scale function
-def tEmission(Q, Qcut, R2, aSover, tfac, tGamma, mu, branchType):
-    prec = 1E-4 # Precision for the solution
-    argsol = (Q, R2, aSover, Qcut, tGamma, mu,  branchType)
-
-    ContinuedEvolve = True
-    t = scipy.optimize.ridder(E, 3.99 * pT2min , Q**2, args = argsol, xtol= prec)
-    
-    # If a root is not found, stop the evolution for this branch
-    if abs(E(t, Q, R2, aSover, Qcut, tGamma, mu, branchType)) > prec:
-        t = Q**2
-        ContinuedEvolve = False
-    return t, ContinuedEvolve
-
-
-# Function to determine the z emission
-def zEmission (t, t0, Rp, aSover, tGamma, inversetGamma, mu, branchType):  
-    #zup, zlow = zbounds(t, t0)
-    # mu, t, t0, branchType
-    zup, zlow = zBounds(mu, t, t0, branchType)
-    
-    z = inversetGamma( tGamma(zlow, aSover) + Rp * (tGamma(zup, aSover) - tGamma(zlow, aSover)), aSover )
-    return z
 
 # Define the function to generate the emissions
 def GenerateEmissions (Q, Qcut, aSover, tfac, branchType, mu):
