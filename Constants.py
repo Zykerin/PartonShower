@@ -34,7 +34,7 @@ c = 0.3
 pTmin = 0.65471
 pT2min = pTmin**2
 
-EvolveType = 'QTilde'
+EvolveType = 'Old'
 
 
 # Define the function to return the gluon's minimum virtuality
@@ -46,7 +46,7 @@ def Qg(mq):
 
 # Define the function to return the mu value for a given parent particle's mass and a given quark.
 def mufunc(mass, ps):
-    return max(mass, max(ps[0].m, ps[1].m))
+    return max(mass, Qg(ps)) 
 
 
 

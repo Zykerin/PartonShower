@@ -78,12 +78,12 @@ def GenerateEmissions (Q, Qcut, aSover, tfac, branchType, mu):
         case _:
             raise Exception('Invalid Branching option.')
     # Get the transverse momentum squared and virtual mass squared
-    Ems.Ptsq = transversemmsq(Ems.t, Ems.z)
+    Ems.Ptsq = transversemmsq(Ems.t, Ems.z, branchType, mu)
     Ems.Vmsq = virtualmass(Ems.t, Ems.z)
 
     # Determine whether the transverse momentum is physical
     if Ems.Ptsq < pT2min:
-        print('Invalid transverse momentum')
+        #print('Invalid transverse momentum')
         Ems.Generated = False
     
 
@@ -150,22 +150,20 @@ def Evolve(pa, pslist, Qc, aSover):
     # The magnitude of the momentum of the parent particle
     pmag = np.sqrt(pa.Px**2 + pa.Py**2 + pa.Pz**2)
     
-    
-    
     # Get the starting evolution scale
     Emission.t = EvolutionScale(pslist[0], pslist[1])[0]
     
+    
+    Pb = Particle(0, 0, 0, 0, 0, 0, 0, 0, mufunc(pa.m, Qg(pa.m)), 0, 0, False)
+    Pc = Particle(0, 0, 0, 0, 0, 0, 0, 0, Qg(pa.m), 0, 0, False)
+    
+    masses = [mufunc(pa.m, max(Pb.m, Pc.m)), Qg(pa.m)]
     # Evolve the particle until the emission is past the cuttoff or another condition is met.
     while np.sqrt(Emission.t) * Emission.z > np.sqrt( tscalcuttoff * t_min) :
         
-        Pb = Particle(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, False)
-        Pc = Particle(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, False)
-        
-        masses = [mufunc(pa.m, [Pb, Pc]), Qg(pa.m)]
-        
         # Get the emission values.
         Emission = GenerateEmissions(np.sqrt(Emission.t) * Emission.z, np.sqrt(t_min), aSover, fac_t, branch_type, masses)
-        
+
         # Terminate the evolution if a requirement is met.
         # This then stops this branch's evolution
         if Emission.ContinueEvolve == False:
@@ -190,9 +188,9 @@ def Evolve(pa, pslist, Qc, aSover):
             
             # Depending on the branch, append the appropiate particle
             if branch_type == 2:
-                p = Particle(21, 1, np.sqrt(Emission.t), Emission.z, Pt, Pt * np.cos(Emission.phi), Pt * np.sin(Emission.phi), (1 -Emission.z) * pmag, 0, Ei, Emission.phi, Emission.ContinueEvolve)
+                p = Particle(21, 1, np.sqrt(Emission.t), Emission.z, Pt, Pt * np.cos(Emission.phi), Pt * np.sin(Emission.phi), (1 -Emission.z) * pmag, Pc.m, Ei, Emission.phi, Emission.ContinueEvolve)
             elif branch_type == 3:
-                p = Particle(-3, 1, np.sqrt(Emission.t), Emission.z, Pt, Pt * np.cos(Emission.phi), Pt * np.sin(Emission.phi), (1 -Emission.z) * pmag, 0, Ei, Emission.phi, Emission.ContinueEvolve)
+                p = Particle(-3, 1, np.sqrt(Emission.t), Emission.z, Pt, Pt * np.cos(Emission.phi), Pt * np.sin(Emission.phi), (1 -Emission.z) * pmag, Pc.m, Ei, Emission.phi, Emission.ContinueEvolve)
 
             # Resacale the magnitude of the momnetum with the z emission
             pmag = Emission.z * pmag
@@ -328,7 +326,7 @@ def ShowerParticle(jet, particle, Qmin, aSover):
         Pb = Particle(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, False)
         Pc = Particle(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, False)
         EvolveParticle(Pa, Pb, Pc, Qmin, aSover)
-
+        
         if Pa.ContinueEvolution == False:
             i += 1
             continue

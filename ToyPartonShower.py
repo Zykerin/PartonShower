@@ -20,7 +20,7 @@ inputfile = 'eejj_ECM206.lhe.gz'
 #inputfile = 'eejj_ECM206_1E6.lhe.gz'
 
 # Make the output file
-outputfile = 'CCodeFullerShowerSmall.lhe'
+outputfile = 'OldSmall.lhe'
 
 
 

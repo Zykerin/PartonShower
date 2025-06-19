@@ -5,9 +5,6 @@ import sys
 from Constants import *
 
 
-
-
-
 # Get the rotation matrix for two given vectors.
 def rotationMatrix(v1, v2):
     # Get the cross product of the two vectors.

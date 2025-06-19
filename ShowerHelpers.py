@@ -2,17 +2,32 @@ import sys
 from Constants import *
 import scipy.optimize 
 
+
+
 # Define the transverse momnentum sqaured
-def transversemmsq (t, z):
-    return z**2 * (1 - z)**2 * t
+def transversemmsq (t, z, branchType, mu):
+    
+    match EvolveType:
+        case 'Old':
+    
+            return z**2 * (1 - z)**2 * t
+        case 'QTilde':
+            if branchType == 1 or branchType ==3:
+                
+                return z**2* (1-z)**2 * t**2 - mu[0]**2
+                
+            elif branchType ==2:
+            
+                return (1-z)**2 * (z**2 * t**2 - mu[0]**2) - z * mu[1]**2
+            
+            else:
+                raise Exception('Invalid branch type')
+        case _:
+            raise Exception('Invalid evolution scale type')
 
 # Functuon to find the virtual mass squared.t
 def virtualmass (t, z):
     return z * (1 - z ) * t
-# Define the upper and lower bounds of z, not the overestimate scale versiom
-#def zbounds (t, t0):
-#    return 1- np.sqrt( t0**2/t), np.sqrt(t0**2/t)
-
 
 # Define the upper and lower bounds of z, not the overestimate scale version
 # Also include an option for the old evolution scale
@@ -27,7 +42,7 @@ def zBounds (masses, t, t0, branchType):
             return 0.5 * (1 + np.sqrt(1 - 4 * np.sqrt(mu**2 + pT2min) / t)), 0.5 * (1 - np.sqrt(1 - 4 * np.sqrt(mu**2 + pT2min) / t))
         # Option for quark radiating. For this program currently only q -> qg.
         elif branchType == 2:
-            return np.sqrt(mu**2 + pT2min)/t, 1- np.sqrt(Q**2 + pT2min)/t
+            return  1- np.sqrt(Q**2 + pT2min)/t, np.sqrt(mu**2 + pT2min)/t
         else:
             raise Exception ('Invalid Branch type')
         
@@ -44,10 +59,8 @@ def EvolutionScale(p1, p2):
         case 'Old':
             return [p1.E**2, p2.E**2]
         case 'QTilde':
-            Q2 = (0.5 * p1.E + 0.5* p2.E)**2 - (p1.Px + p2.Px)**2 - (p1.Py + p2.Py)**2 - (p1.Pz + p2.Pz)**2
-
-            print(Q2, p1.E**2)
-            #sys.exit()
+            Q2 = ( p1.E + p2.E)**2 - (p1.Px + p2.Px)**2 - (p1.Py + p2.Py)**2 - (p1.Pz + p2.Pz)**2
+            #Q2 = 0.25 * Q2
             
             b = p1.m**2 / Q2
             c = p2.m**2/Q2
@@ -76,7 +89,6 @@ def GetalphaSOver(Qcut):
 # Define the E(t) or Emission scale function
 def E(t, Q, Rp, aSover, Qcut, tGamma, mu, branchType):
     
-    #zup, zlow = zbounds(t, Qcut)
     zup, zlow = zBounds(mu, t, Qcut, branchType)
     r =  tGamma(zup, aSover) - tGamma(zlow, aSover)
     return np.log(t / Q**2) -  (1 /r) * np.log(Rp)
@@ -90,7 +102,10 @@ def tEmission(Q, Qcut, R2, aSover, tfac, tGamma, mu, branchType):
     argsol = (Q, R2, aSover, Qcut, tGamma, mu,  branchType)
 
     ContinuedEvolve = True
-    t = scipy.optimize.ridder(E, 3.99 * pT2min , Q**2, args = argsol, xtol= prec)
+    if EvolveType == 'QTilde':
+        t = scipy.optimize.ridder(E, tfac * pT2min , Q**2, args = argsol, xtol= prec)
+    else:
+        t = scipy.optimize.ridder(E, tfac * Qcut**2 , Q**2, args = argsol, xtol= prec)
     
     # If a root is not found, stop the evolution for this branch
     if abs(E(t, Q, R2, aSover, Qcut, tGamma, mu, branchType)) > prec:
@@ -101,8 +116,7 @@ def tEmission(Q, Qcut, R2, aSover, tfac, tGamma, mu, branchType):
 
 # Function to determine the z emission
 def zEmission (t, t0, Rp, aSover, tGamma, inversetGamma, mu, branchType):  
-    #zup, zlow = zbounds(t, t0)
-    # mu, t, t0, branchType
+
     zup, zlow = zBounds(mu, t, t0, branchType)
     
     z = inversetGamma( tGamma(zlow, aSover) + Rp * (tGamma(zup, aSover) - tGamma(zlow, aSover)), aSover )
