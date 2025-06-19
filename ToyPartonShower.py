@@ -11,15 +11,17 @@ from Classes import * # File containing data classes
 from Constants import * # File containing the constants
 from Shower import * # File containing the showering functions
 
+
 # Get the alphaS overestimate
 aSover = GetalphaSOver(Qc)
 #aSover = 0.118
 # Get the input file, read and then parse it
-#inputfile = 'eejj_ECM206.lhe.gz'
-inputfile = 'eejj_ECM206_1E6.lhe.gz'
+inputfile = 'eejj_ECM206.lhe.gz'
+#inputfile = 'eejj_ECM206_1E6.lhe.gz'
 
 # Make the output file
-outputfile = 'CCodeFullerShower1E6.lhe'
+outputfile = 'CCodeFullerShowerSmall.lhe'
+
 
 
 events, weights, multiweights = readlhefile(inputfile)
@@ -36,11 +38,10 @@ for event in events:
     newevent = Event([], [])
     # Go throught each particle in the event and create a respective particle data class
     for p in event:
-        P = Particle(p[0], p[1], p[5]**2, 1, np.sqrt(p[2]**2 + p[3]**2 + p[4]**2), p[2], p[3], p[4], p[6], p[5], 0, True)
+        P = Particle(p[0], p[1], p[5]**2, 1, np.sqrt(p[2]**2 + p[3]**2 + p[4]**2), p[2], p[3], p[4], Qg(p[6]), p[5], 0, True)
         newevent.Jets.append(P)
     Events.append(newevent)
-
-
+'''
 ShoweredEvents = []
 for event in tqdm(Events):
     Ev = ShowerEvent(event, Qc, aSover)
@@ -54,15 +55,15 @@ for ev in ShoweredEvents:
     for p in ev.AllParticles:
         ShoweredParticles.append([p.typ, p.status, p.Px, p.Py, p.Pz, p.E, p.m])
     ShoweredEV.append(ShoweredParticles)
-
-
 '''
+
+
 pss = []
 for ev in tqdm(Events):
     ps = Shower_Evens(ev, Qc, aSover)
     pss.append(ps)
-'''
-'''
+
+
 # Create the momenta in a form that can be read by the LHE writer
 # This program was given by Dr. P
 ShoweredEvents = []
@@ -72,7 +73,7 @@ for event in pss:
     for p in event[0]:
         ShoweredParticles.append([p.typ, p.status, p.Px, p.Py, p.Pz, p.E, p.m])
     ShoweredEvents.append(ShoweredParticles)
-    '''
+
 
 
 '''
@@ -84,6 +85,21 @@ for i in tqdm(list(range(Nevolve))):
    ps = Evolve(Pa, Qc, aSover)
    emissions = emissions + ps
 '''
+
+
+
+# construct the LHE writer:
+debug = False
+sigma = 1.2
+error = 0.2
+ECM = 206
+outlhe = outputfile.replace('.hepmc','_pyr.lhe')
+fout = init_lhe(outlhe, sigma, error, ECM)
+write_lhe(fout, ShoweredEvents, ECM**2, debug)
+finalize_lhe    
+
+
+sys.exit()
 # Set the arrays to obtain the physicals
 ts = []
 zs = []
@@ -96,28 +112,13 @@ for ev in pss:
         zs.append(p.z_at_em)
         Pt.append(p.Pt)
 '''
-
-
-# construct the LHE writer:
-debug = False
-sigma = 1.2
-error = 0.2
-ECM = 206
-outlhe = outputfile.replace('.hepmc','_pyr.lhe')
-fout = init_lhe(outlhe, sigma, error, ECM)
-write_lhe(fout, ShoweredEV, ECM**2, debug)
-finalize_lhe    
-
-
-sys.exit()
-'''
 # Get all the physicals
 for particle in emissions:
     ts.append(particle.t_at_em)
     zs.append(particle.z_at_em)
     Pt.append(particle.Pt)
     Vm.append(0)
-'''
+
 
 
 

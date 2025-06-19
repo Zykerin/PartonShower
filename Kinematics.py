@@ -1,6 +1,9 @@
 import numpy as np
 import copy
 import scipy.optimize 
+import sys
+from Constants import *
+
 
 # Define the transverse momnentum sqaured
 def transversemmsq (t, z):
@@ -10,8 +13,33 @@ def transversemmsq (t, z):
 def virtualmass (t, z):
     return z * (1 - z ) * t
 # Define the upper and lower bounds of z, not the overestimate scale versiom
-def zbounds (t, t0):
-    return 1- np.sqrt( t0**2/t), np.sqrt(t0**2/t)
+#def zbounds (t, t0):
+#    return 1- np.sqrt( t0**2/t), np.sqrt(t0**2/t)
+
+
+# Define the upper and lower bounds of z, not the overestimate scale version
+# Also include an option for the old evolution scale
+def zBounds (masses, t, t0, branchType):
+    if EvolveType == 'Old':
+        return 1- np.sqrt( t0**2/t), np.sqrt(t0**2/t)
+    elif EvolveType  == 'QTilde':
+        mu = masses[0]
+        Q = masses[1]
+        # Option for gluon radiating. Either g -> gg or g -> qqbar
+        if branchType == 1 or branchType ==3:
+            return 0.5 * (1 + np.sqrt(1 - 4 * np.sqrt(mu**2 + pT2min) / t)), 0.5 * (1 - np.sqrt(1 - 4 * np.sqrt(mu**2 + pT2min) / t))
+        # Option for quark radiating. For this program currently only q -> qg.
+        elif branchType == 2:
+            return np.sqrt(mu**2 + pT2min)/t, 1- np.sqrt(Q**2 + pT2min)/t
+        else:
+            raise Exception ('Invalid Branch type')
+        
+    else:
+        raise Exception('Invalid evolution scale type')
+    
+
+
+
 
 # Get the rotation matrix for two given vectors.
 def rotationMatrix(v1, v2):
