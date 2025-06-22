@@ -11,7 +11,79 @@ import sys
 rand.seed(12345)
 
 
+   
+'''
+while True:
+    match branchType:
+        case 1:
+            Ems.t, Ems.ContinueEvolve = tEmission(Ems.t, Qcut, R1, aSover, tfac, tGamma_gg, mu, branchType)    
+            Ems.z = zEmission(Ems.t, Qcut, R2, aSover, tGamma_gg, inversetGamma_gg, mu, branchType)
+            
+            if Ems.ContinueEvolve == False:
+                Ems.z = 1
+                Ems.pTsq = 0
+                Ems.Vmsq = 0
+                #Ems.Generated = False
+                break
+            
+            if R3 > Pgg(Ems.z) / Pgg_over(Ems.z):
+                continue
+            
+        case 2:
+            Ems.t, Ems.ContinueEvolve = tEmission(Ems.t, Qcut, R1, aSover, tfac, tGamma_qq, mu, branchType)       
+            Ems.z = zEmission(Ems.t, Qcut, R2, aSover, tGamma_qq, inversetGamma_qq, mu, branchType)
+            if Ems.ContinueEvolve == False:
+                Ems.z = 1
+                Ems.pTsq = 0
+                Ems.Vmsq = 0
+                Ems.Generated = False
+                break
+            
+            if R3 > Pqq(Ems.z) / Pqq_over(Ems.z):
+                continue
+            
+            
+        case 3:         
+            Ems.t, Ems.ContinueEvolve = tEmission(Ems.t, Qcut, R1, aSover, tfac, tGamma_gq, mu, branchType)   
+            Ems.z = zEmission(Ems.t, Qcut, R2, aSover, tGamma_gq, inversetGamma_gq, mu, branchType)  
+            
+            if Ems.ContinueEvolve == False:
+                break
+            
+            if R3 > Pgq(Ems.z) / Pgq_over(Ems.z):
+                continue
+            
+            
+        case 4: 
+            Ems.t, Ems.ContinueEvolve = tEmission(Ems.t, Qcut, R1, aSover, tfac, tGamma_qg, mu, branchType)
+            Ems.z = zEmission(Ems.t, Qcut, R2, aSover, tGamma_qg, inversetGamma_qg, mu, branchType)   
+            
+            if Ems.ContinueEvolve == False:
+                break
+            
+            if R3 > Pqg(Ems.z) / Pqg_over(Ems.z):
+                continue
+            
+            
+        case _:
+            raise Exception('Invalid Branching option.')
+    
+    Ems.Ptsq = transversemmsq(Ems.t, Ems.z, branchType, mu)
+    Ems.Vmsq = virtualmass(Ems.t, Ems.z)
+    
+    if Ems.Ptsq < pT2min:
+        if debug: print('Transverse momentum reached')
+        continue
+  
+    if R4 > GetalphaS(Ems.t, Ems.z, Qcut) / aSover:
+        continue
+    
+    break
 
+
+Ems.Ptsq = transversemmsq(Ems.t, Ems.z, branchType, mu)
+Ems.Vmsq = virtualmass(Ems.t, Ems.z)
+'''
 
 
 # Define the function to generate the emissions
@@ -23,28 +95,20 @@ def GenerateEmissions (Q, Qcut, aSover, tfac, branchType, mu):
     R3 = rand.random()
     R4 = rand.random()
     
-    
+
     # Get an empty emission object to hold emission data.
-    Ems= emissioninfo(0,1, 0, 0, 0, True, True)
+    Ems= emissioninfo(Q,1, 0, 0, 0, True, True)
 
     # Get the t emission value
     match branchType:
         case 1:
-            
-            Ems.t, Ems.ContinueEvolve = tEmission(Q, Qcut, R1, aSover, tfac, tGamma_gg, mu, branchType)
-            
+            Ems.t, Ems.ContinueEvolve = tEmission(Q, Qcut, R1, aSover, tfac, tGamma_gg, mu, branchType)         
         case 2:
-            
-            Ems.t, Ems.ContinueEvolve = tEmission(Q, Qcut, R1, aSover, tfac, tGamma_qq, mu, branchType)
-            
-        case 3:
-            
-            Ems.t, Ems.ContinueEvolve = tEmission(Q, Qcut, R1, aSover, tfac, tGamma_gq, mu, branchType)
-            
-        case 4:
-            
+            Ems.t, Ems.ContinueEvolve = tEmission(Q, Qcut, R1, aSover, tfac, tGamma_qq, mu, branchType)         
+        case 3:         
+            Ems.t, Ems.ContinueEvolve = tEmission(Q, Qcut, R1, aSover, tfac, tGamma_gq, mu, branchType)       
+        case 4: 
             Ems.t, Ems.ContinueEvolve = tEmission(Q, Qcut, R1, aSover, tfac, tGamma_qg, mu, branchType)
-        
         case _:
             raise Exception('Invalid Branching option.')
             
@@ -59,22 +123,14 @@ def GenerateEmissions (Q, Qcut, aSover, tfac, branchType, mu):
     
     # Get the z emissiom, tranverse momentum squared, and the virtual mass squared
     match branchType:
-        case 1:
-            
+        case 1:        
             Ems.z = zEmission(Ems.t, Qcut, R2, aSover, tGamma_gg, inversetGamma_gg, mu, branchType)
-            
-        case 2:
-            
+        case 2:            
             Ems.z = zEmission(Ems.t, Qcut, R2, aSover, tGamma_qq, inversetGamma_qq, mu, branchType)
-            
-        case 3:
-            
-            Ems.z = zEmission(Ems.t, Qcut, R2, aSover, tGamma_gq, inversetGamma_gq, mu, branchType)
-            
-        case 4:
-            
-            Ems.z = zEmission(Ems.t, Qcut, R2, aSover, tGamma_qg, inversetGamma_qg, mu, branchType)
-        
+        case 3:  
+            Ems.z = zEmission(Ems.t, Qcut, R2, aSover, tGamma_gq, inversetGamma_gq, mu, branchType)   
+        case 4:       
+            Ems.z = zEmission(Ems.t, Qcut, R2, aSover, tGamma_qg, inversetGamma_qg, mu, branchType)   
         case _:
             raise Exception('Invalid Branching option.')
     # Get the transverse momentum squared and virtual mass squared
@@ -83,32 +139,24 @@ def GenerateEmissions (Q, Qcut, aSover, tfac, branchType, mu):
 
     # Determine whether the transverse momentum is physical
     if Ems.Ptsq < pT2min:
-        #print('Invalid transverse momentum')
+        if debug: print('Invalid transverse momentum')
         Ems.Generated = False
     
 
     # Determine whether or no to accept the t value, and inturn accept the emission
     match branchType:
-        case 1:
-            
+        case 1:   
             if R3 > Pgg(Ems.z) / Pgg_over(Ems.z):
                 Ems.Generated = False
-                
         case 2:
-            
             if R3 > Pqq(Ems.z) / Pqq_over(Ems.z):
-                Ems.Generated = False
-                
+                Ems.Generated = False    
         case 3:
-            
             if R3 > Pgq(Ems.z) / Pgq_over(Ems.z):
-                Ems.Generated = False
-                
-        case 4:
-            
+                Ems.Generated = False 
+        case 4:   
             if R3 > Pqg(Ems.z) / Pqg_over(Ems.z):
-                Ems.Generated = False
-                
+                Ems.Generated = False       
         case _:
             raise Exception('Invalid Branching option.')
                 
@@ -119,10 +167,17 @@ def GenerateEmissions (Q, Qcut, aSover, tfac, branchType, mu):
     
     # If any of the tests are true, then there is no emission and return these values
     if Ems.Generated == False:
+        #print('No emission generated')
         Ems.z = 1
         Ems.Ptsq = 0
         Ems.Vmsq = 0  
 
+    '''
+    if Ems.t > 0:
+        pass
+    else:
+        Ems.t = -1'''
+    
     return Ems
 
 # The function to evolve a certain particle
@@ -152,12 +207,12 @@ def Evolve(pa, pslist, Qc, aSover):
     
     # Get the starting evolution scale
     Emission.t = EvolutionScale(pslist[0], pslist[1])[0]
-    
+
     
     Pb = Particle(0, 0, 0, 0, 0, 0, 0, 0, mufunc(pa.m, Qg(pa.m)), 0, 0, False)
     Pc = Particle(0, 0, 0, 0, 0, 0, 0, 0, Qg(pa.m), 0, 0, False)
-    
-    masses = [mufunc(pa.m, max(Pb.m, Pc.m)), Qg(pa.m)]
+    #masses = [0, Qg(pa.m)]
+    masses = [mufunc(pa.m, Qg(max(Pb.m, Pc.m))), Qg(pa.m)]
     # Evolve the particle until the emission is past the cuttoff or another condition is met.
     while np.sqrt(Emission.t) * Emission.z > np.sqrt( tscalcuttoff * t_min) :
         
@@ -174,7 +229,9 @@ def Evolve(pa, pslist, Qc, aSover):
         
         # Return emssions if the current one is past the cutt offf
         if Emission.t < tscalcuttoff * t_min:
-            print('Hit Cuttoff, stopping Evolution')
+            
+            if debug: print('Hit Cuttoff, stopping Evolution')
+            ps.append(Particle(pa.typ, 1, np.sqrt(Emission.t), Emission.z, 0, 0, 0, pmag, 0, pmag, 0, False))
             pa.ContinueEvolution = False
             return ps
         
@@ -187,7 +244,7 @@ def Evolve(pa, pslist, Qc, aSover):
             Ei = np.sqrt(( 1- Emission.z)**2 * pmag**2 + Pt**2)
             
             # Depending on the branch, append the appropiate particle
-            if branch_type == 2:
+            if branch_type == 2 or branch_type ==1:
                 p = Particle(21, 1, np.sqrt(Emission.t), Emission.z, Pt, Pt * np.cos(Emission.phi), Pt * np.sin(Emission.phi), (1 -Emission.z) * pmag, Pc.m, Ei, Emission.phi, Emission.ContinueEvolve)
             elif branch_type == 3:
                 p = Particle(-3, 1, np.sqrt(Emission.t), Emission.z, Pt, Pt * np.cos(Emission.phi), Pt * np.sin(Emission.phi), (1 -Emission.z) * pmag, Pc.m, Ei, Emission.phi, Emission.ContinueEvolve)
@@ -225,21 +282,33 @@ def EvolveParticle(Pa, Pb, Pc, Qc, aSover):
         # If the parent particle is a quark, then the outgoing quark is the same type
         # For now there is only q -> qg for initial quark
         if abs(Pa.typ) < 6 and abs(Pa.typ) > 0:
+            # Set the branch type and get the masses to generate the emissions.
             branch_type = 2
-            Emission = GenerateEmissions(Q, np.sqrt(tMin), aSover, fac_t, branch_type)
+            Pb.m = mufunc(Pa.m, Qg(Pa.m))
+            Pc.m = Qg(Pa.m)
+            masses = [mufunc(Pa.m, Qg(max(Pb.m, Pc.m))), Qg(Pa.m)]
+            Emission = GenerateEmissions(Q, np.sqrt(tMin), aSover, fac_t, branch_type, masses)
             Pb.typ = Pa.typ
             Pc.typ = 21
+            
             
         # For gluons, there are g -> gg and g -> qqbar.
         # So a competition for which to accept is needed.
         elif abs(Pa.typ) == 21:
-            # Get emission for g -> gg
+            # Set the branch type and get the masses to generate the emissions.
             branch_type = 1
-            Emission = GenerateEmissions(Q, np.sqrt(tMin), aSover, fac_t, branch_type)
+            Pb.m = Qg(Pa.m)
+            Pc.m = Qg(Pa.m)
+            masses = [Pb.m, Qg(Pa.m)]
+
+            # Get emission for g -> gg
+            Emission = GenerateEmissions(Q, np.sqrt(tMin), aSover, fac_t, branch_type, masses)
             
             # Set the child particles type
             Pb.typ = 21
             Pc.typ = 21
+
+            
             
             # If stopped evolution, set t to 0 and continue for test of g -> qqbar emision
             if Emission.ContinueEvolve == False:
@@ -250,18 +319,23 @@ def EvolveParticle(Pa, Pb, Pc, Qc, aSover):
             for flavor in range(1, 6):
                 # Get emission for g -> qqbar
                 branch_type = 3
-                EmissionTemp = GenerateEmissions(Q, np.sqrt(tMin), aSover, fac_t, branch_type)
+   
+                masses = [mufunc(Pa.m, Qg(Pa.m)), Qg(Pa.m)]
+                EmissionTemp = GenerateEmissions(Q, np.sqrt(tMin), aSover, fac_t, branch_type, masses)
                 
                 # Accept g -> qqbar emission if true.
                 if EmissionTemp.ContinueEvolve == True and EmissionTemp.t > Emission.t:
-                    
+                    Pb.m = mufunc(Pa.m, Qg(Pa.m))
+                    Pc.m = mufunc(Pa.m, Qg(Pa.m))
                     Pb.typ = flavor
                     Pc.typ = -flavor
                     Emission = EmissionTemp
+                    
+                    
         else:
             print('ERROR: Invalid Particle type')
 
-        Q = np.sqrt(Emission.t) 
+        Q = np.sqrt(Emission.t) * Emission.z
         if Emission.Generated == True or Emission.ContinueEvolve == False:
             break
     # Terminate the evolution if needed.
@@ -301,8 +375,7 @@ def EvolveParticle(Pa, Pb, Pc, Qc, aSover):
     Pc.Pt = Pt
     Pb.ContinueEvolution = True
     Pc.ContinueEvolution = True
-    Pb.m = 0
-    Pc.m = 0
+
     
     # Rotate the child particles to allign with the parent particle
     RotatedParticles = RotateMomentaLab(Pa, [Pb, Pc])
@@ -316,6 +389,7 @@ def ShowerParticle(jet, particle, Qmin, aSover):
     jet.Particles.append(particle)
     
     i =0
+    
     
     while i < 25:
         # Check if the index is out of bounds for the list
@@ -354,20 +428,30 @@ def ShowerParticle(jet, particle, Qmin, aSover):
 def ShowerEvent(event, Qmin, aSover):
     
     NewEvent = Event([],[])
-
+    plist = []
+    
     # Go through the list of progenitors in the event and shower each
     for p in event.Jets:
-            jet = Jet(p, [])
+
             # Test if particle is electron or positron and then append it
             if abs(p.typ) == 11:
                 NewEvent.AllParticles.append(p)
                 continue
+            elif abs(p.typ) < 6 and abs(p.typ) > 0 and p.status==1:
+                plist.append(p)
+    a = EvolutionScale(plist[0], plist[1])
+    plist[0].t_at_em = a[0]
+    plist[1].t_at_em =a[1]
+ 
+    
+    for p in plist:
+            jet = Jet(p, [])
+
             # Shower the progenitor
             ShowerParticle(jet, p, Qmin, aSover)   
             
-            #jet = Jet(p, Rotated_particles)
             NewEvent.Jets.append(jet)
-            
+
     
     # Apply global momentum for this event
     NewEvent.AllParticles = Glob_mom_cons(NewEvent.AllParticles, NewEvent.Jets)

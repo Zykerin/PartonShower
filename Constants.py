@@ -30,11 +30,13 @@ b = 2.3
 delta = 2.8 # Aka cutoffKinScale
 c = 0.3
 
+debug = False
 
 pTmin = 0.65471
 pT2min = pTmin**2
 
-EvolveType = 'Old'
+# Select the evolution variable, either 'QTilde' for Herwig's evolution variable, or 'Old' for the one this program was using before i.e E^2
+EvolveType = 'QTilde' 
 
 
 # Define the function to return the gluon's minimum virtuality

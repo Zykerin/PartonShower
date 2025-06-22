@@ -17,10 +17,11 @@ aSover = GetalphaSOver(Qc)
 #aSover = 0.118
 # Get the input file, read and then parse it
 inputfile = 'eejj_ECM206.lhe.gz'
+
 #inputfile = 'eejj_ECM206_1E6.lhe.gz'
 
 # Make the output file
-outputfile = 'OldSmall.lhe'
+outputfile = 'QTildeSmFuller.lhe'
 
 
 
@@ -41,7 +42,9 @@ for event in events:
         P = Particle(p[0], p[1], p[5]**2, 1, np.sqrt(p[2]**2 + p[3]**2 + p[4]**2), p[2], p[3], p[4], Qg(p[6]), p[5], 0, True)
         newevent.Jets.append(P)
     Events.append(newevent)
-'''
+
+
+
 ShoweredEvents = []
 for event in tqdm(Events):
     Ev = ShowerEvent(event, Qc, aSover)
@@ -55,8 +58,8 @@ for ev in ShoweredEvents:
     for p in ev.AllParticles:
         ShoweredParticles.append([p.typ, p.status, p.Px, p.Py, p.Pz, p.E, p.m])
     ShoweredEV.append(ShoweredParticles)
-'''
 
+'''
 
 pss = []
 for ev in tqdm(Events):
@@ -74,6 +77,7 @@ for event in pss:
         ShoweredParticles.append([p.typ, p.status, p.Px, p.Py, p.Pz, p.E, p.m])
     ShoweredEvents.append(ShoweredParticles)
 
+'''
 
 
 '''
@@ -95,7 +99,7 @@ error = 0.2
 ECM = 206
 outlhe = outputfile.replace('.hepmc','_pyr.lhe')
 fout = init_lhe(outlhe, sigma, error, ECM)
-write_lhe(fout, ShoweredEvents, ECM**2, debug)
+write_lhe(fout, ShoweredEV, ECM**2, debug)
 finalize_lhe    
 
 
@@ -113,11 +117,12 @@ for ev in pss:
         Pt.append(p.Pt)
 '''
 # Get all the physicals
-for particle in emissions:
-    ts.append(particle.t_at_em)
-    zs.append(particle.z_at_em)
-    Pt.append(particle.Pt)
-    Vm.append(0)
+for ev in pss:
+    for particle in ev[0]:
+        ts.append(particle.t_at_em)
+        zs.append(particle.z_at_em)
+        Pt.append(particle.Pt)
+        Vm.append(0)
 
 
 

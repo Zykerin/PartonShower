@@ -4,14 +4,16 @@ import scipy.optimize
 
 
 
-# Define the transverse momnentum sqaured
+# Define the transverse momnentum sqaured.
+# This includes options for the new and old ones.
 def transversemmsq (t, z, branchType, mu):
-    
+    # Select which evolution variable to use.
     match EvolveType:
         case 'Old':
     
             return z**2 * (1 - z)**2 * t
         case 'QTilde':
+            # Option for gluon radiating. Either g -> gg or g -> qqbar
             if branchType == 1 or branchType ==3:
                 
                 return z**2* (1-z)**2 * t**2 - mu[0]**2
@@ -32,6 +34,7 @@ def virtualmass (t, z):
 # Define the upper and lower bounds of z, not the overestimate scale version
 # Also include an option for the old evolution scale
 def zBounds (masses, t, t0, branchType):
+    # Select which evolution variable to use.
     if EvolveType == 'Old':
         return 1- np.sqrt( t0**2/t), np.sqrt(t0**2/t)
     elif EvolveType  == 'QTilde':
@@ -39,7 +42,8 @@ def zBounds (masses, t, t0, branchType):
         Q = masses[1]
         # Option for gluon radiating. Either g -> gg or g -> qqbar
         if branchType == 1 or branchType ==3:
-            return 0.5 * (1 + np.sqrt(1 - 4 * np.sqrt(mu**2 + pT2min) / t)), 0.5 * (1 - np.sqrt(1 - 4 * np.sqrt(mu**2 + pT2min) / t))
+            #return 0.5 * (1 + np.sqrt(1 - 4 * np.sqrt( (mu**2 + pT2min)/t ))), 0.5 * (1 - np.sqrt(1 - 4 * np.sqrt((mu**2 + pT2min)/t)))
+            return 1-np.sqrt((mu**2+pT2min))/t, np.sqrt(mu**2 + pT2min) / t
         # Option for quark radiating. For this program currently only q -> qg.
         elif branchType == 2:
             return  1- np.sqrt(Q**2 + pT2min)/t, np.sqrt(mu**2 + pT2min)/t
@@ -60,7 +64,6 @@ def EvolutionScale(p1, p2):
             return [p1.E**2, p2.E**2]
         case 'QTilde':
             Q2 = ( p1.E + p2.E)**2 - (p1.Px + p2.Px)**2 - (p1.Py + p2.Py)**2 - (p1.Pz + p2.Pz)**2
-            #Q2 = 0.25 * Q2
             
             b = p1.m**2 / Q2
             c = p2.m**2/Q2
@@ -69,7 +72,7 @@ def EvolutionScale(p1, p2):
             ktildc = 0.5 * (1 - b + c + lam)
             
             Qtilde = [ np.sqrt(Q2 * ktildb), np.sqrt(Q2 * ktildc)]
-            return Qtilde
+            return [np.sqrt(Q2 * ktildb), np.sqrt(Q2 * ktildc)]
 
 
 
@@ -100,10 +103,27 @@ def E(t, Q, Rp, aSover, Qcut, tGamma, mu, branchType):
 def tEmission(Q, Qcut, R2, aSover, tfac, tGamma, mu, branchType):
     prec = 1E-4 # Precision for the solution
     argsol = (Q, R2, aSover, Qcut, tGamma, mu,  branchType)
-
+    
     ContinuedEvolve = True
+    
+    '''
+    if branchType == 3 or branchType == 1:
+        if Q < 16 * (mu[0]**2 + pT2min):
+            ContinuedEvolve = False
+            Q = -1
+            return Q, ContinuedEvolve
+    
+    if zlow > zup:
+        ContinuedEvolve = False
+        Q = -1
+        return Q, ContinuedEvolve
+    '''
+    #zup, zlow = zBounds(mu, Q, Qcut, branchType)
+
     if EvolveType == 'QTilde':
-        t = scipy.optimize.ridder(E, tfac * pT2min , Q**2, args = argsol, xtol= prec)
+        #rho = tGamma(zup, aSover) - tGamma(zlow, aSover)
+        #t = Q**2* R2**(1/rho)
+        t = scipy.optimize.ridder(E, 4 * pT2min, Q**2, args = argsol, xtol= prec)
     else:
         t = scipy.optimize.ridder(E, tfac * Qcut**2 , Q**2, args = argsol, xtol= prec)
     
