@@ -106,23 +106,8 @@ def tEmission(Q, Qcut, R2, aSover, tfac, tGamma, mu, branchType):
     
     ContinuedEvolve = True
     
-    '''
-    if branchType == 3 or branchType == 1:
-        if Q < 16 * (mu[0]**2 + pT2min):
-            ContinuedEvolve = False
-            Q = -1
-            return Q, ContinuedEvolve
-    
-    if zlow > zup:
-        ContinuedEvolve = False
-        Q = -1
-        return Q, ContinuedEvolve
-    '''
-    #zup, zlow = zBounds(mu, Q, Qcut, branchType)
-
     if EvolveType == 'QTilde':
-        #rho = tGamma(zup, aSover) - tGamma(zlow, aSover)
-        #t = Q**2* R2**(1/rho)
+        
         t = scipy.optimize.ridder(E, 4 * pT2min, Q**2, args = argsol, xtol= prec)
     else:
         t = scipy.optimize.ridder(E, tfac * Qcut**2 , Q**2, args = argsol, xtol= prec)
