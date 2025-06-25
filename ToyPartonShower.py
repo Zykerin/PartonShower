@@ -12,6 +12,7 @@ from Constants import * # File containing the constants
 from Shower import * # File containing the showering functions
 
 
+
 # Get the alphaS overestimate
 aSover = GetalphaSOver(Qc)
 #aSover = 0.118
@@ -21,7 +22,7 @@ inputfile = 'eejj_ECM206.lhe.gz'
 #inputfile = 'eejj_ECM206_1E6.lhe.gz'
 
 # Make the output file
-outputfile = 'QTildeSmFuller.lhe'
+outputfile = 'QTildeFull.lhe'
 
 
 
@@ -46,6 +47,7 @@ for event in events:
 
 
 ShoweredEvents = []
+
 for event in tqdm(Events):
     Ev = ShowerEvent(event, Qc, aSover)
     ShoweredEvents.append(Ev)
@@ -58,6 +60,20 @@ for ev in ShoweredEvents:
     for p in ev.AllParticles:
         ShoweredParticles.append([p.typ, p.status, p.Px, p.Py, p.Pz, p.E, p.m])
     ShoweredEV.append(ShoweredParticles)
+
+# %%
+
+for i in range(len(ShoweredEV)):
+    ev = ShoweredEV[i]
+    for p in ev:
+        if p[2] == -51.145495970459926:
+            print(i)
+            #sys.exit()
+        
+    
+#sys.exit()
+    
+
 
 '''
 

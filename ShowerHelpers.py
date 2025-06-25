@@ -16,11 +16,11 @@ def transversemmsq (t, z, branchType, mu):
             # Option for gluon radiating. Either g -> gg or g -> qqbar
             if branchType == 1 or branchType ==3:
                 
-                return z**2* (1-z)**2 * t**2 - mu[0]**2
-                
+                return z**2* (1-z)**2 * t - mu[0]**2
+            # Option for quark radiating
             elif branchType ==2:
             
-                return (1-z)**2 * (z**2 * t**2 - mu[0]**2) - z * mu[1]**2
+                return (1-z)**2 * (z**2 * t - mu[0]**2) - z * mu[1]**2
             
             else:
                 raise Exception('Invalid branch type')
@@ -39,14 +39,14 @@ def zBounds (masses, t, t0, branchType):
         return 1- np.sqrt( t0**2/t), np.sqrt(t0**2/t)
     elif EvolveType  == 'QTilde':
         mu = masses[0]
-        Q = masses[1]
+        Qg = masses[1]
         # Option for gluon radiating. Either g -> gg or g -> qqbar
         if branchType == 1 or branchType ==3:
             #return 0.5 * (1 + np.sqrt(1 - 4 * np.sqrt( (mu**2 + pT2min)/t ))), 0.5 * (1 - np.sqrt(1 - 4 * np.sqrt((mu**2 + pT2min)/t)))
-            return 1-np.sqrt((mu**2+pT2min))/t, np.sqrt(mu**2 + pT2min) / t
+            return 1-np.sqrt((mu**2+pT2min)/t), np.sqrt((mu**2 + pT2min)/t)
         # Option for quark radiating. For this program currently only q -> qg.
         elif branchType == 2:
-            return  1- np.sqrt(Q**2 + pT2min)/t, np.sqrt(mu**2 + pT2min)/t
+            return  1- np.sqrt((Qg**2 + pT2min)/t), np.sqrt((mu**2 + pT2min)/t)
         else:
             raise Exception ('Invalid Branch type')
         
@@ -62,6 +62,7 @@ def EvolutionScale(p1, p2):
     match EvolveType :
         case 'Old':
             return [p1.E**2, p2.E**2]
+            #return [p1.E + p2.E, p1.E + p2.E]
         case 'QTilde':
             Q2 = ( p1.E + p2.E)**2 - (p1.Px + p2.Px)**2 - (p1.Py + p2.Py)**2 - (p1.Pz + p2.Pz)**2
             
@@ -93,7 +94,9 @@ def GetalphaSOver(Qcut):
 def E(t, Q, Rp, aSover, Qcut, tGamma, mu, branchType):
     
     zup, zlow = zBounds(mu, t, Qcut, branchType)
+    
     r =  tGamma(zup, aSover) - tGamma(zlow, aSover)
+
     return np.log(t / Q**2) -  (1 /r) * np.log(Rp)
 
 
@@ -103,15 +106,23 @@ def E(t, Q, Rp, aSover, Qcut, tGamma, mu, branchType):
 def tEmission(Q, Qcut, R2, aSover, tfac, tGamma, mu, branchType):
     prec = 1E-4 # Precision for the solution
     argsol = (Q, R2, aSover, Qcut, tGamma, mu,  branchType)
-    
+
     ContinuedEvolve = True
-    
     if EvolveType == 'QTilde':
-        
-        t = scipy.optimize.ridder(E, 4 * pT2min, Q**2, args = argsol, xtol= prec)
+        if branchType == 2:
+            t0 = mu[0]**2 + pT2min
+            t1 = mu[1]**2 + pT2min
+            t = scipy.optimize.ridder(E, 0.99 * (2*np.sqrt(t1 * t0) + t0 + t1), Q**2, args = argsol, xtol= prec)
+        elif branchType == 1:
+            t = scipy.optimize.ridder(E, 3.99 * (mu[0]**2 + pT2min), Q**2, args = argsol, xtol= prec)
+        elif branchType == 3:
+            t = scipy.optimize.ridder(E, 3.99 * (mu[0]**2 + pT2min), Q**2, args = argsol, xtol= prec)
+
+
     else:
         t = scipy.optimize.ridder(E, tfac * Qcut**2 , Q**2, args = argsol, xtol= prec)
-    
+
+
     # If a root is not found, stop the evolution for this branch
     if abs(E(t, Q, R2, aSover, Qcut, tGamma, mu, branchType)) > prec:
         t = Q**2

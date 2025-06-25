@@ -8,7 +8,7 @@ from alphaS import * # ALphaS coupling constant
 from ShowerHelpers import *
 import math
 import sys
-rand.seed(12345)
+rand.seed(12345) # Set the seed to rule out randomness in testing
 
 
 
@@ -23,7 +23,7 @@ def GenerateEmissions (Q, Qcut, aSover, tfac, branchType, mu):
     
 
     # Get an empty emission object to hold emission data.
-    Ems= emissioninfo(Q,1, 0, 0, 0, True, True)
+    Ems= emissioninfo(0,1, 0, 0, 0, True, True)
 
     # Get the t emission value
     match branchType:
@@ -43,7 +43,6 @@ def GenerateEmissions (Q, Qcut, aSover, tfac, branchType, mu):
         Ems.z = 1
         Ems.pTsq = 0
         Ems.Vmsq = 0
-        #Ems.Generated = False
         return Ems
     
     
@@ -59,6 +58,7 @@ def GenerateEmissions (Q, Qcut, aSover, tfac, branchType, mu):
             Ems.z = zEmission(Ems.t, Qcut, R2, aSover, tGamma_qg, inversetGamma_qg, mu, branchType)   
         case _:
             raise Exception('Invalid Branching option.')
+    
     # Get the transverse momentum squared and virtual mass squared
     Ems.Ptsq = transversemmsq(Ems.t, Ems.z, branchType, mu)
     Ems.Vmsq = virtualmass(Ems.t, Ems.z)
@@ -93,16 +93,10 @@ def GenerateEmissions (Q, Qcut, aSover, tfac, branchType, mu):
     
     # If any of the tests are true, then there is no emission and return these values
     if Ems.Generated == False:
-        #print('No emission generated')
         Ems.z = 1
         Ems.Ptsq = 0
         Ems.Vmsq = 0  
 
-    '''
-    if Ems.t > 0:
-        pass
-    else:
-        Ems.t = -1'''
     
     return Ems
 
@@ -195,7 +189,7 @@ def EvolveParticle(Pa, Pb, Pc, Qc, aSover):
     
     # Set the evolution variable from the parent particle's information
     Q = np.sqrt(Pa.t_at_em) * Pa.z_at_em
-    
+    masses = [0, 0] # Set the masses to 0 for testing
     # Loop until either the particle evolution is terminated or an emission is generated
     # This is an implementation of a do while loop from another codebase 
     while True:
@@ -212,7 +206,7 @@ def EvolveParticle(Pa, Pb, Pc, Qc, aSover):
             branch_type = 2
             Pb.m = mufunc(Pa.m, Qg(Pa.m))
             Pc.m = Qg(Pa.m)
-            masses = [mufunc(Pa.m, Qg(max(Pb.m, Pc.m))), Qg(Pa.m)]
+            #masses = [Pb.m, Qg(Pa.m)]
             Emission = GenerateEmissions(Q, np.sqrt(tMin), aSover, fac_t, branch_type, masses)
             Pb.typ = Pa.typ
             Pc.typ = 21
@@ -225,7 +219,7 @@ def EvolveParticle(Pa, Pb, Pc, Qc, aSover):
             branch_type = 1
             Pb.m = Qg(Pa.m)
             Pc.m = Qg(Pa.m)
-            masses = [Pb.m, Qg(Pa.m)]
+            #masses = [Pb.m, Qg(Pa.m)]
 
             # Get emission for g -> gg
             Emission = GenerateEmissions(Q, np.sqrt(tMin), aSover, fac_t, branch_type, masses)
@@ -246,7 +240,7 @@ def EvolveParticle(Pa, Pb, Pc, Qc, aSover):
                 # Get emission for g -> qqbar
                 branch_type = 3
    
-                masses = [mufunc(Pa.m, Qg(Pa.m)), Qg(Pa.m)]
+                #masses = [mufunc(Pa.m, Qg(Pa.m)), Qg(Pa.m)]
                 EmissionTemp = GenerateEmissions(Q, np.sqrt(tMin), aSover, fac_t, branch_type, masses)
                 
                 # Accept g -> qqbar emission if true.
@@ -261,7 +255,7 @@ def EvolveParticle(Pa, Pb, Pc, Qc, aSover):
         else:
             print('ERROR: Invalid Particle type')
 
-        Q = np.sqrt(Emission.t) * Emission.z
+        Q = np.sqrt(Emission.t)
         if Emission.Generated == True or Emission.ContinueEvolve == False:
             break
     # Terminate the evolution if needed.
@@ -293,7 +287,7 @@ def EvolveParticle(Pa, Pb, Pc, Qc, aSover):
     Pc.Py = -Pt * np.sin(Emission.phi)
     Pc.Pz = (1- Emission.z) * pmag
     Pc.E = np.sqrt(Pc.Px**2 + Pc.Py**2 + Pc.Pz**2)
-    
+    #print(Emission.t)
     # Set the other variables for the particles
     Pb.status = 1
     Pc.status = 1

@@ -5,12 +5,12 @@ from Constants import *
 
 # The g - > gg splitting function, overestimate, integral, and integral's inverse
 def Pgg(z):
-    #return  Ca * ((1 - z * (1-z))**2) / (z * (1-z))
     return   Ca * (z / (1.0 - z) + (1.0 - z) / z + z * (1.0 - z))
 def Pgg_over(z):
     return Ca * (1/(1-z) + 1/z)
 def tGamma_gg(z, aSover):
     return -Ca * (aSover/ (2 * np.pi)) * np.log(1/z - 1)
+    #return Ca * (aSover/(2 * np.pi)) * np.log(z/(1-z))
 def inversetGamma_gg(z, aSover):
     return 1 / (1 + np.exp(-2 * np.pi * z/ (Ca * aSover)))
 
