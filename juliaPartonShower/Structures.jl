@@ -1,27 +1,33 @@
 
 # The structure for an emission
-struct Emission
+mutable struct Emission
    t::Float64
    z::Float64
    pTsq::Float64
    phi::Float64
    Generated::Bool
-   ContinueEvolution::Bool
+   continueEvolution::Bool
 
 end
 
 # The structure for a particle.
-struct Particle
+mutable struct Particle
     id::Int
     status::Int
     t::Float64
     z::Float64
     m::Float64
+    pT::Float64
     px::Float64
     py::Float64
     pz::Float64
     E::Float64
     phi::Float64
+    qT::Vector{Float64}
+    color::Int32
+    antiColor::Int32
+    alpha::Float64
+    virtuality::Float64
     continueEvolution::Bool
     parent::Vector{Particle}
     children::Vector{Particle}
@@ -29,7 +35,7 @@ struct Particle
 
 end
 
-struct Jets
+struct Jet
    AllParticles::Vector{Particle}
    Progenitor::Particle
 end
@@ -37,7 +43,7 @@ end
 
 struct Event
    AllParticles::Vector{Particle}
-   Jets::Vector
+   Jets::Vector{Any}
 
 
 end

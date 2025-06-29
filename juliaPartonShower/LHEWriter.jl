@@ -13,12 +13,12 @@ function writeLHE(infile, events, shat, ECM, sigma, stddev)
         helicities = []
         relations = []
         for p in event
-            append!(momenta, [[p[3], p[4], p[5], p[6]]])
+            push!(momenta, [p[3], p[4], p[5], p[6]])
             append!(status, p[2])
             if p[1] == -1
-                append!(relations, [[0,0]])
+                push!(relations, [0,0])
             elseif p[1] == 1
-                append!(relations, [[1, 2]])
+                push!(relations, [1, 2])
             end
             append!(flavours, p[1])
             append!(helicities, 1)

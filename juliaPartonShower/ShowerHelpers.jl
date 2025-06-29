@@ -14,6 +14,11 @@ function transversemmSquared(t::Float64, z::Float64, branchType::Int, masses)
    end
 end
 
+# Function to get the virtual mass squared of the emitting particle
+function getVirtMsq(t::Float64, z::Float64)
+    return z * (1 - z) * t
+end
+
 # Function for the overestimate of the z integral limits
 function zBounds(masses::Vector{Float64}, t::Float64, branchType::Int)
    mu::Float64 = masses[0]
