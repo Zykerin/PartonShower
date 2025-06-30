@@ -15,71 +15,74 @@ function generateEmissions(Q::Float64, Qcut::Float64, aSover::Float64, branchTyp
     R3 = rand()
     R4 = rand()
     
-    ems = Emission(0, 1, 0, 0, true, true)
 
+    t = 0
+    z = 0
+    Generated = true
+    continueEvolution = true
+    pTsq = 0
+    phi = 0
     # Check for the branch type and get the appropiate z and t emissions
     if branchType == 1
         tmin = 3.99 * (masses[1]^2 + Qcut^2)
-        ems.t, ems.continueEvolution = tEmission(Q, R1, aSover, tmin, Intgg, masses, branchType)
-        ems.z = zEmission(ems.t, R2, aSover, Intgg, InvInt_gg, masses, branchType)
+        t, continueEvolution = tEmission(Q, R1, aSover, tmin, Intgg, masses, branchType)
+        z = zEmission(t, R2, aSover, Intgg, InvInt_gg, masses, branchType)
     elseif branchType == 2
         t0 = masses[1]^2 + Qcut^2
         t1 = masses[2]^2 + Qcut^2
         tmin = 0.99 * (2 * sqrt(t1 * t0) + t1 + t0)
-        ems.t, ems.continueEvolution = tEmission(Q, R1, aSover, tmin, Intqq, masses, branchType)
-        ems.z = zEmission(ems.t, R2, aSover, Intqq, InvInt_qq, masses, branchType)
+        t, continueEvolution = tEmission(Q, R1, aSover, tmin, Intqq, masses, branchType)
+        z = zEmission(t, R2, aSover, Intqq, InvInt_qq, masses, branchType)
     elseif branchType == 3
         tmin = 3.99 * (masses[1]^2 + Qcut^2)
-        ems.t, ems.continueEvolution = tEmission(Q, R1, aSover, tmin, Intgq, masses, branchType)
-        ems.z = zEmission(ems.t, R2, aSover, Intgq, InvInt_gq, masses, branchType)
+        t, continueEvolution = tEmission(Q, R1, aSover, tmin, Intgq, masses, branchType)
+        z = zEmission(t, R2, aSover, Intgq, InvInt_gq, masses, branchType)
     end
     
     # If the evoltion has been terminated, return the emission struc
-    if ems.continueEvolution == false
-        ems.z = 1
-        return ems
+    if continueEvolution == false
+        z = 1
+        return Emission(t, z, pTsq, phi, Generated, continueEvolution)
     end
 
     # Get the transverse momentum squared
-    ems.pTsq = transversemmSquared(ems.t, ems.z, branchType, masses)
+    pTsq = transversemmSquared(t, z, branchType, masses)
 
     # Apply the minimum transverse momentum cut
-    if ems.pTsq < Qcut 
-        ems.Generated = false
+    if pTsq < Qcut 
+        Generated = false
     end
 
     # Apply the overestimate of the splitting function cut according to the branch
     if branchType == 1
-       if R3 > Pgg(ems.z) > Pgg_over(ems.z)
-            ems.Generated = false
+       if R3 > Pgg(z) > Pgg_over(z)
+            Generated = false
        end
     elseif branchType == 2
-        if R3 > Pqq(ems.z) > Pqq_over(ems.z)
-            ems.Generated = false
+        if R3 > Pqq(z) > Pqq_over(z)
+            Generated = false
        end
     elseif branchType == 3
-        if R3 > Pgq(ems.z) > Pgq_over(ems.z)
-            ems.Generated = false
+        if R3 > Pgq(z) > Pgq_over(z)
+            Generated = false
        end
     end
 
     # Apply the alphaS oversitmate cut
-    if R4 > getAlphaS(ems.t, ems.z, Qcut) / aSover
-        ems.Generated = false
+    if R4 > getAlphaS(t, z, Qcut) / aSover
+        Generated = false
     end
 
-    ems.phi = (2 * rand() - 1) * pi
+    phi = (2 * rand() - 1) * pi
 
-    if ems.Generated == false
+    if Generated == false
         #print("Not Generated")
-        ems.z = 1
+        z = 1
     end
 
-    return ems
+    return Emission(t, z, pTsq, phi, Generated, continueEvolution)
 
 end
-
-
 
 # Functionn to evolve a specific particle given its children
 function evolveParticle(pa::Particle, pb::Particle, pc::Particle, Qcut::Float64, aSover::Float64)
@@ -172,7 +175,7 @@ function evolveParticle(pa::Particle, pb::Particle, pc::Particle, Qcut::Float64,
     pmag = sqrt(pa.px^2 + pa.py^2 + pa.pz^2)
 
     pa.virtuality = vmsq
-    #=
+    
     pb.px = pT * cos(emission.phi)
     pb.py = pT * sin(emission.phi)
     pb.pz = pb.z * pmag
@@ -182,7 +185,7 @@ function evolveParticle(pa::Particle, pb::Particle, pc::Particle, Qcut::Float64,
     pc.py = - pT * sin(emission.phi)
     pc.pz = pc.z * pmag
     pc.E = sqrt(pc.px^2 + pc.py^2 + pc.pz^2)
-    =#
+    
     pa.status = -1 # Set the emitting particle to initial state for emission
 
     pb.aorb = "b"
@@ -257,7 +260,7 @@ function showerEvent(event, Qmin::Float64, aSover::Float64)
 
         showerParticle(jet, p, Qmin, aSover)
         part = findColorPartner(p, plist)
-        reconSudakovBasis(p, part)
+        #reconSudakovBasis(p, part)
         #for p in jet.AllParticles
         #    print("px = " * string(p.px) * ", py = " * string(p.py) * ", pz = " * string(p.pz) * ", E = "* string(p.E) * "\n")
         #end

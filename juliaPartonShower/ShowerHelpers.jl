@@ -68,6 +68,8 @@ function tEmission(Q::Float64, R1::Float64, aSover::Float64, tmin::Float64, tGam
 
 end
 
+
+
 # Function to get the z emission value
 function zEmission(t::Float64, R2::Float64, aSover::Float64, tGamma::Function, inversetGamma::Function, masses::Vector{Float64}, branchType::Int8)
     zup, zlow = zBounds(masses, t, branchType)

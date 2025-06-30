@@ -1,6 +1,6 @@
 
 # The structure for an emission
-mutable struct Emission
+struct Emission
    t::Float64
    z::Float64
    pTsq::Float64

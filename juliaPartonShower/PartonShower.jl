@@ -13,8 +13,8 @@ using ProgressMeter
 #pushfirst!(PyVector(pyimport("sys")."path"), "")
 #@pyimport LHEReader
 
-
-inputFile::String = "eejj_ECM206.lhe.gz"
+inputFile::String = "eejj_ECM206_1E6.lhe.gz"
+#inputFile::String = "eejj_ECM206.lhe.gz"
 outputFile::String = "Tester.lhe"
 
 events = parse_lhe(inputFile)

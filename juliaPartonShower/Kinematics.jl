@@ -31,7 +31,6 @@ function rotate(p::Particle, rotMat::Matrix)
     p.px = rotVec[1]
     p.py = rotVec[2]
     p.pz = rotVec[3]
-    return p
 end
 
 
@@ -51,7 +50,6 @@ function rotateMomentaLab(p::Particle, particles::Vector{Particle})
         push!(rotatedParticles, p)
 
     end
-    return rotatedParticles
 end
 
 # Function to get the boost factor for the outgoing jet (new) and parent jet (old)
@@ -83,8 +81,6 @@ function boost(p::Particle, beta::Vector{Float64})
     p.py = - gamma * beta[2] * p.E + ( (gamma -1) * beta[1] * beta[2] / bmag^2) * p.px + (    1 + (gamma - 1) * beta[2]^2 / bmag^2) * p.py + ( (gamma - 1) * beta[2] * beta[3] / bmag^2) * p.pz
     p.pz = - gamma * beta[3] * p.E + ( (gamma -1) * beta[1] * beta[3] / bmag^2) * p.px + ( (gamma - 1) * beta[3] * beta[2] / bmag^2) * p.py + (     1 + (gamma - 1) * beta[3]^2/ bmag^2) * p.pz
     p.E =    gamma * p.E - gamma * beta[1] * p.px - gamma * beta[2] * p.py - gamma * beta[3] * p.pz
-
-    return p
 end
 
 # The function to numerically solve to find k
@@ -173,9 +169,9 @@ function globalMomCons(showeredParticles::Vector{Particle}, Jets::Vector{Jet})
 
             # Iterate through the jet's particles and rotate and boost each one
             for p in jet.AllParticles
-                rotated = rotate(p, rotms[i])
-                pboosted = boost(rotated, beta)
-                push!(rotatedShoweredParticles, pboosted)
+                rotate(p, rotms[i])
+                boost(p, beta)
+                push!(rotatedShoweredParticles, p)
 
             end
         end
