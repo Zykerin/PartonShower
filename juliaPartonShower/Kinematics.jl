@@ -63,12 +63,12 @@ function boostFactor(k::Float64, new::Vector{Float64}, old::Vector{Float64})
     kp = k * sqrt(old[1]^2 + old[2]^2 + old[3]^2)
     kps = kp^2
     betamag = (q * new[4] - kp * sqrt(kps + Q2)) / (kps + qs + Q2)
-    beta = betamag * (k / kp) * [old[1], old[2], old[3]]
+    beta = betamag * (k / kp) * Float64[old[1], old[2], old[3]]
 
     if betamag >= 0
         return beta
     else
-        return [0, 0, 0]
+        return Float64[0, 0, 0]
     end
 
 end
@@ -79,10 +79,10 @@ function boost(p::Particle, beta::Vector{Float64})
     bmag = sqrt(beta[1]^2 + beta[2]^2 + beta[3]^2)
     gamma = 1/ sqrt(1 - bmag^2)
 
-    p.px = - gamma * beta[0] * p.E + (    1 + (gamma -1) * beta[0]^2 / bmag^2) * p.px + ( (gamma - 1) * beta[0] * beta[1] / bmag^2) * p.py +  ((gamma - 1) * beta[0] * beta[2] / bmag^2) * p.pz
-    p.py = - gamma * beta[1] * p.E + ( (gamma -1) * beta[0] * beta[1] / bmag^2) * p.px + (    1 + (gamma - 1) * beta[1]^2 / bmag^2) * p.py + ( (gamma - 1) * beta[1] * beta[2] / bmag^2) * p.pz
-    p.pz = - gamma * beta[2] * p.E + ( (gamma -1) * beta[0] * beta[2] / bmag^2) * p.px + ( (gamma - 1) * beta[2] * beta[1] / bmag^2) * p.py + (     1 + (gamma - 1) * beta[2]^2/ bmag^2) * p.pz
-    p.E =    gamma * p.E - gamma * beta[0] * p.px - gamma * beta[1] * p.py - gamma * beta[2] * p.pz
+    p.px = - gamma * beta[1] * p.E + (    1 + (gamma -1) * beta[1]^2 / bmag^2) * p.px + ( (gamma - 1) * beta[1] * beta[2] / bmag^2) * p.py +  ((gamma - 1) * beta[1] * beta[3] / bmag^2) * p.pz
+    p.py = - gamma * beta[2] * p.E + ( (gamma -1) * beta[1] * beta[2] / bmag^2) * p.px + (    1 + (gamma - 1) * beta[2]^2 / bmag^2) * p.py + ( (gamma - 1) * beta[2] * beta[3] / bmag^2) * p.pz
+    p.pz = - gamma * beta[3] * p.E + ( (gamma -1) * beta[1] * beta[3] / bmag^2) * p.px + ( (gamma - 1) * beta[3] * beta[2] / bmag^2) * p.py + (     1 + (gamma - 1) * beta[3]^2/ bmag^2) * p.pz
+    p.E =    gamma * p.E - gamma * beta[1] * p.px - gamma * beta[2] * p.py - gamma * beta[3] * p.pz
 
     return p
 end
@@ -173,7 +173,7 @@ function globalMomCons(showeredParticles::Vector{Particle}, Jets::Vector{Jet})
 
             # Iterate through the jet's particles and rotate and boost each one
             for p in jet.AllParticles
-                rotated = rotated(p, rotms[i])
+                rotated = rotate(p, rotms[i])
                 pboosted = boost(rotated, beta)
                 push!(rotatedShoweredParticles, pboosted)
 
@@ -186,6 +186,7 @@ end
 
 # Function to reconstruct the sudakov basis for the entire tree with the progenitor being the starting root 
 function reconSudakovBasis(prog::Particle, progPart::Particle)
+    # If the progenitor particle has not emitted, or is in final state, then do not reconstruct the basis
     if prog.status == 1
         return
     end
@@ -202,37 +203,53 @@ function reconSudakovBasis(prog::Particle, progPart::Particle)
         if current.status == -1
             push!(stack, current)
             calculatePhysicals(current, prog, progPart, parent)
+            parent = current
             current = current.children[1]
         
         # If the current particle is final state, i.e. no emission, then calculate its phyiscals, then select the next particle
         # as the second child of its parent and remove this parent of the stack of particles
         elseif current.status == 1
             calculatePhysicals(current, prog, progPart, parent)
-            current = pop!(stack)
-            current = current.children[2]
+            parent = pop!(stack)
+            current = parent.children[2]
         end
 
     end
+    calculatePhysicals(current, prog, progPart, parent)
 
 
 end
 
 # Function to actually calculate the phyiscals of the sudakov basis for a given particle
 function calculatePhysicals(part::Particle, prog::Particle, progPart::Particle, parent::Particle)
-
-    pdotn = dot4Vec([prog.px, prog.py, prog.pz, prog.E], [progPart.px, progPart.py, progPart.pz, progPart.pz])
+    pmag = sqrt(prog.px^2 + prog.py^2 + prog.pz^2)
+    nmag = sqrt(progPart.px^2 + progPart.py^2 + progPart.pz^2)
+    #pdotn = dot4Vec([prog.px, prog.py, prog.pz, prog.E], [progPart.px, progPart.py, progPart.pz, progPart.E])
+    pdotn = dot4Vec([0, 0, pmag, pmag], [0, 0, -nmag, nmag])
 
     alpha = parent.alpha * part.z
     part.alpha = alpha
     qi2 = part.virtuality
-    kT = [part.pT * cos(part.phi), part.pT * sin(part.phi), 0 , 0] # pT = (px, py, pz, E)
-    part.qT = (parent.px * part.z - kT[1], parent.py * part.z - kT[2], 0, 0) # qT = (px, py, pz, E)
-    betai = (qi2 - part.alpha^2 * part.m^2 - (-part.qT[1]^2 - part.qT[2])) / (2 * part.alpha * pdotn)
+    
+  
 
-    part.px = alpha * prog.px + betai * progPart.px + part.qT[1]
-    part.py = alpha * prog.py + betai * progPart.py + part.qT[2]
-    part.pz = alpha * prog.pz + betai * progPart.pz
-    part.E = alpha * prog.E + betai * progPart.E
+    if part.aorb == "c"
+        kT = [-part.pT * cos(part.phi), -part.pT * sin(part.phi), 0 , 0] # pT = (px, py, pz, E)
+    elseif part.aorb == "b"
+        kT = [part.pT * cos(part.phi), part.pT * sin(part.phi), 0 , 0] # pT = (px, py, pz, E)
+    end
+    part.qT = [parent.qT[1] * part.z + kT[1], parent.qT[2] * part.z + kT[2], 0, 0] # qT = (px, py, pz, E)
+    betai = (qi2 - part.alpha^2 * part.m^2 - (-part.qT[1]^2 - part.qT[2]^2)) / (2 * part.alpha * pdotn)
+
+    #part.px = alpha * prog.px + betai * progPart.px + part.qT[1]
+    #part.py = alpha * prog.py + betai * progPart.py + part.qT[2]
+    #part.pz = alpha * prog.pz + betai * progPart.pz
+    #part.E = alpha * prog.E + betai * progPart.E
+
+    part.px = alpha * 0 + betai * 0 + part.qT[1]
+    part.py = alpha * 0 + betai * 0+ part.qT[2]
+    part.pz = alpha * pmag + betai * (-nmag)
+    part.E = alpha * pmag + betai * (nmag)
 
 end
 
@@ -243,12 +260,13 @@ end
 # Function to find the color partner of a particle
 function findColorPartner(parti::Particle, particles::Vector{Particle})
 
-    partner = parti
+    partner = 0
 
     for pc in particles
-        if patri.color == pc.antiColor && parti.antiColor == pc.color
+        if parti.color == pc.antiColor && parti.antiColor == pc.color
             partner = pc
         end
     end 
+    return partner
 
 end

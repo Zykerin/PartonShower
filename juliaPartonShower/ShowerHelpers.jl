@@ -4,13 +4,13 @@ include("Constants.jl")
 
 # Function to get the transverse momentum squared
 # The masses variable should be an array with [mu, Qg]
-function transversemmSquared(t::Float64, z::Float64, branchType::Int, masses)
+function transversemmSquared(t::Float64, z::Float64, branchType::Int8, masses::Vector{Float64})
     # Option for gluon radiating, either g -> gg or g -> qqbar
    if branchType == 1 || branchType == 3
-       return z^2 * (1-z)^2 * t - masses[0]^2
+       return z^2 * (1-z)^2 * t - masses[1]^2
     # Option for quark radiating, only q -> qg
    elseif branchType == 2
-       return (1-z)^2 * (z^2 * t - masses[0]^2) - z * masses[1]^2
+       return (1-z)^2 * (z^2 * t - masses[1]^2) - z * masses[2]^2
    end
 end
 
@@ -20,9 +20,9 @@ function getVirtMsq(t::Float64, z::Float64)
 end
 
 # Function for the overestimate of the z integral limits
-function zBounds(masses::Vector{Float64}, t::Float64, branchType::Int)
-   mu::Float64 = masses[0]
-   Qg::Floay64 = masses[1]
+function zBounds(masses::Vector{Float64}, t::Float64, branchType::Int8)
+   mu::Float64 = masses[1]
+   Qg::Float64 = masses[2]
 
    if branchType == 1 || branchType == 3
        return 1 - sqrt( (mu^2 + pT2min)/ t), sqrt((mu^2 + pT2min)/t)

@@ -24,7 +24,7 @@ end
 function Pgq_over(z::Float64)
     return Tr
 end
-function Int_gq(z::Float64, aSover::Float64)
+function Intgq(z::Float64, aSover::Float64)
     return Tr * (aSover /(2 * pi)) * z
 end
 function InvInt_gq(z::Float64, aSover::Float64)
@@ -54,7 +54,7 @@ end
 function Pqq_over(z::Float64)
     return Cf * 2 / (1 - z)
 end
-function Int_qq(z::Float64, aSover::Float64)
+function Intqq(z::Float64, aSover::Float64)
     return -2 * Cf * (aSover / (2 * pi)) * log(1-z)
 end
 function InvInt_qq(z::Float64, aSover::Float64)

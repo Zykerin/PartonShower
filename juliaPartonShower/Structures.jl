@@ -7,7 +7,6 @@ mutable struct Emission
    phi::Float64
    Generated::Bool
    continueEvolution::Bool
-
 end
 
 # The structure for a particle.
@@ -29,7 +28,7 @@ mutable struct Particle
     alpha::Float64
     virtuality::Float64
     continueEvolution::Bool
-    parent::Vector{Particle}
+    aorb::String
     children::Vector{Particle}
 
 

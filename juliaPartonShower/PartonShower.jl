@@ -25,7 +25,7 @@ myEvents = []
 for ev in events
     newEvent = Event([], [])
     for p in ev.particles
-        newP = Particle(p.id, p.status, 0, 0, p.m, 0, p.px, p.py, p.pz, p.e, 0, [], p.color1, p.color2, 1, 0, true, [], [])
+        newP = Particle(p.id, p.status, 0, 1, p.m, 0, p.px, p.py, p.pz, p.e, 0, [p.px, p.py, p.pz, p.e], p.color1, p.color2, 1, 0, true, "", [])
         push!(newEvent.Jets, newP)
     end
     push!(myEvents, newEvent)
@@ -46,10 +46,11 @@ for ev in showeredEvents
     for p in ev.AllParticles
         push!(sParts, [p.id, p.status, p.px, p.py, p.pz, p.E, p.m])
     end
+    push!(showeredEV, sParts)
 end
 
 ECM = 206
 sigma = 1.2
 error = 0.1
 
-writeLHE(inputFile, showerdEV, ECM^2, ECM, sigma, error)
+writeLHE(outputFile, showeredEV, ECM^2, ECM, sigma, error)
