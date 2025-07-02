@@ -1,9 +1,10 @@
 global const Nc = 3 # The number of colors
-global const Cf = (Nc^2 -1)/ (2 * Nc) # The quark color factor
-global const Ca= Nc
-global const Tr = 1/2
+global const Cf = (Nc^2 -1)/ (2 * Nc) # The quark color factor associated with gluon emissions from a quark
+global const Ca= Nc # The color factor associated with gluon emissions from another gluon
+global const Tr = 1/2 # The color facor for a gluon to qqbar emission
 
-asmz = 0.118
+#asmz = 0.118
+asmz = 0.1074
 mz = 91.1876
 order = 1
 mb = 4.75

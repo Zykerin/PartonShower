@@ -6,7 +6,7 @@ include("Constants.jl")
 using Random 
 
 
-Random.seed!(12345) # Set the seed for easier testing
+Random.seed!(1234) # Set the seed for easier testing
 
 function generateEmissions(Q::Float64, Qcut::Float64, aSover::Float64, branchType::Int8, masses::Vector{Float64})
 
@@ -49,21 +49,21 @@ function generateEmissions(Q::Float64, Qcut::Float64, aSover::Float64, branchTyp
     pTsq = transversemmSquared(t, z, branchType, masses)
 
     # Apply the minimum transverse momentum cut
-    if pTsq < Qcut 
+    if pTsq < pT2min
         Generated = false
     end
 
     # Apply the overestimate of the splitting function cut according to the branch
     if branchType == 1
-       if R3 > Pgg(z) > Pgg_over(z)
+       if R3 > Pgg(z) / Pgg_over(z)
             Generated = false
        end
     elseif branchType == 2
-        if R3 > Pqq(z) > Pqq_over(z)
+        if R3 > Pqq(z) / Pqq_over(z)
             Generated = false
        end
     elseif branchType == 3
-        if R3 > Pgq(z) > Pgq_over(z)
+        if R3 > Pgq(z)/ Pgq_over(z)
             Generated = false
        end
     end
@@ -84,12 +84,100 @@ function generateEmissions(Q::Float64, Qcut::Float64, aSover::Float64, branchTyp
 
 end
 
+function genEmissions2(Q::Float64, Qcut::Float64, aSover::Float64, branchType::Int8, masses::Vector{Float64})
+    R1 = rand()
+    R2 = rand()
+    R3 = rand()
+    R4 = rand()
+    t = 0
+    generated = true
+    continueEvolve = true
+    z = 0
+    pTsq = 0
+    phi = 0
+    # Check for the branch type and get the appropiate z and t emissions
+    if branchType == 1
+        t, continueEvolve = gettEmisisonDirect(Q, R1, Qcut, aSover, Intgg, masses, branchType)
+   
+    elseif branchType == 2
+        t, continueEvolve = gettEmisisonDirect(Q, R1, Qcut, aSover, Intqq, masses, branchType)
+     
+    elseif branchType == 3
+        t, continueEvolve = gettEmisisonDirect(Q, R1, Qcut, aSover, Intgq, masses, branchType)
+
+    end
+   
+    if continueEvolve == false
+        return Emission(t, z, pTsq, phi, generated, false)
+    end
+    zup, zlow = zBounds(masses, t, branchType)
+
+
+    # Ensure that the limits are nonnegative
+    if zup < 0 || zlow < 0
+        generated = false
+    end
+    if branchType == 1
+        z = zEmission(t, R2, aSover, Intgg, InvInt_gg, masses, branchType)
+    elseif branchType == 2
+        z = zEmission(t, R2, aSover, Intqq, InvInt_qq, masses, branchType)
+    elseif branchType == 3
+        z = zEmission(t, R2, aSover, Intgq, InvInt_gq, masses, branchType)
+    end
+    # Ensure that the upper bounds is greater than the lower bounds
+    if zlow > zup
+        generated = false
+    end
+
+    # Check the ensure that z is within the limits
+    if z > zup || z < zlow
+        generated = falseTester
+    end
+
+    # Get the transverse momentum squared
+    pTsq = transversemmSquared(t, z, branchType, masses)
+
+    # Check that the momentum is greater than the momentum cutt off
+    if pTsq < pT2min
+        generated = false
+    end
+
+    # Apply the overestimate of the splitting function cut according to the branch
+    if branchType == 1
+       if R3 > Pgg(z)/ Pgg_over(z)
+            generated = false
+       end
+    elseif branchType == 2
+        if R3 > Pqq(z) / Pqq_over(z)
+            generated = false
+       end
+    elseif branchType == 3
+        if R3 > Pgq(z)/ Pgq_over(z)
+            generated = false
+       end
+    end
+
+    # Apply the alphaS oversitmate cut
+    if R4 > getAlphaS(t, z, Qcut) / aSover
+        generated = false
+    end
+
+    phi = (2 * rand() - 1) * pi
+
+
+    if generated == false
+        z = 1
+    end
+
+    return Emission(t, z, pTsq, phi, generated, continueEvolve)
+
+end
+
 # Functionn to evolve a specific particle given its children
 function evolveParticle(pa::Particle, pb::Particle, pc::Particle, Qcut::Float64, aSover::Float64)
     tcuttoff = 4 # The curtoff for the evolution variable
 
     emission = Emission(pa.t, 1, 0, 0, true, true) # Base values for the emisisons
-
     Q::Float64 = sqrt(pa.t) * pa.z # Get the initial scale for this evolution
     masses = Float64[0, 0] # Get the masses which are set to 0 for now
     branchType::Int8 = 0
@@ -98,6 +186,8 @@ function evolveParticle(pa::Particle, pb::Particle, pc::Particle, Qcut::Float64,
         # Condition if the evolution scale is below the cuttoff to break
         if Q < sqrt(tcuttoff * Qcut^2)
             pa.continueEvolution = false
+            pa.status = 1 # Set the parent particle to final state if there is not emission
+            pa.virtuality = 0 # The virtuality is zero if the particle has no emission
             return
         end
         # Branch for quark emiting. Currently only q -> qg
@@ -105,7 +195,8 @@ function evolveParticle(pa::Particle, pb::Particle, pc::Particle, Qcut::Float64,
             branchType = 2
             #pb.m = mufunc(pa.m, Qg(pa.m))
             #pc.m = Qg(pa.m)
-            emission = generateEmissions(Q, Qcut, aSover, branchType, masses)
+            #emission = generateEmissions(Q, Qcut, aSover, branchType, masses)
+            emission = genEmissions2(Q, Qcut, aSover, branchType, masses)
             pb.id = pa.id
             pc.id = 21
         # Condition for gluon emittion which needs competition
@@ -114,18 +205,19 @@ function evolveParticle(pa::Particle, pb::Particle, pc::Particle, Qcut::Float64,
             #pb.m = Qg(pa.m)
             #pc.m = Qg(pa.m)
 
-            emission = generateEmissions(Q, Qcut, aSover, branchType, masses)
-
+            #emission = generateEmissions(Q, Qcut, aSover, branchType, masses)
+            emission = genEmissions2(Q, Qcut, aSover, branchType, masses)
             pb.id = 21
             pc.id = 21
 
             if emission.continueEvolution == false
-                emission = Emission(0, 0, 0, 0,  false, false)
+                emission = Emission(0, 1, 0, 0,  false, false)
             end
             # Test for the possibility of a g -> qqbar emission
             branchType  = 3
             for flavor in range(1, 5)
-                emissionTemp = generateEmissions(Q, Qcut, aSover, branchType, masses)
+                #emissionTemp = generateEmissions(Q, Qcut, aSover, branchType, masses)
+                emissionTemp = genEmissions2(Q, Qcut, aSover, branchType, masses)
 
                 # Accept the emission if the generated t value is greater 
                 if emissionTemp.continueEvolution == true && emissionTemp.t > emission.t
@@ -137,6 +229,12 @@ function evolveParticle(pa::Particle, pb::Particle, pc::Particle, Qcut::Float64,
                 end
             end
 
+        end
+        if emission.t < (tcuttoff * Qcut^2)
+            pa.continueEvolution = false
+            pa.status = 1 # Set the parent particle to final state if there is not emission
+            pa.virtuality = 0 # The virtuality is zero if the particle has no emission
+            return
         end
         # Rescale the evolution variable
         Q = sqrt(emission.t)
@@ -155,7 +253,6 @@ function evolveParticle(pa::Particle, pb::Particle, pc::Particle, Qcut::Float64,
         pa.virtuality = 0 # The virtuality is zero if the particle has no emission
         return
     end
-
     pb.t = emission.t
     pc.t = emission.t
     pb.z = emission.z
@@ -163,9 +260,6 @@ function evolveParticle(pa::Particle, pb::Particle, pc::Particle, Qcut::Float64,
 
     pb.m = 0
     pc.m = 0
-
-    #pb.alpha = pa.alpha * pb.z
-    #pc.alpha = pa.alpha * pc.z
 
     pb.phi = emission.phi 
     pc.phi = emission.phi
@@ -175,7 +269,7 @@ function evolveParticle(pa::Particle, pb::Particle, pc::Particle, Qcut::Float64,
     pmag = sqrt(pa.px^2 + pa.py^2 + pa.pz^2)
 
     pa.virtuality = vmsq
-    
+    #=
     pb.px = pT * cos(emission.phi)
     pb.py = pT * sin(emission.phi)
     pb.pz = pb.z * pmag
@@ -185,8 +279,9 @@ function evolveParticle(pa::Particle, pb::Particle, pc::Particle, Qcut::Float64,
     pc.py = - pT * sin(emission.phi)
     pc.pz = pc.z * pmag
     pc.E = sqrt(pc.px^2 + pc.py^2 + pc.pz^2)
-    
-    pa.status = -1 # Set the emitting particle to initial state for emission
+    =#
+
+    pa.status = -1 # Set the emitting particle Particlto initial state for emission
 
     pb.aorb = "b"
     pc.aorb = "c"
@@ -216,8 +311,8 @@ function showerParticle(jet::Jet, particle::Particle, Qmin::Float64, aSover::Flo
         end
         pa = jet.AllParticles[i]
         # Get the child particles' templates
-        pb = Particle(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, [], 1, 1, 0, 0, true, "", [])
-        pc = Particle(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, [], 1, 1, 0, 0, true, "", [])
+        pb = Particle(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, [], 1, 1, 0, 0, 0, true, "", [])
+        pc = Particle(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, [], 1, 1, 0, 0, 0, true, "", [])
         evolveParticle(pa, pb, pc, Qmin, aSover)
         # If the evolution is terminated, end this branch
         if pa.continueEvolution == false
@@ -260,16 +355,36 @@ function showerEvent(event, Qmin::Float64, aSover::Float64)
 
         showerParticle(jet, p, Qmin, aSover)
         part = findColorPartner(p, plist)
-        #reconSudakovBasis(p, part)
-        #for p in jet.AllParticles
-        #    print("px = " * string(p.px) * ", py = " * string(p.py) * ", pz = " * string(p.pz) * ", E = "* string(p.E) * "\n")
-        #end
+        reconSudakovBasis(p, part)
+        #=
+        qj =[0, 0, 0, 0]
+        for p2 in jet.AllParticles   
+            qj += [p2.px, p2.py, p2.pz, p2.E]
+            #print("px = " * string(p.px) * ", py = " * string(p.py) * ", pz = " * string(p.pz) * ", E = "* string(p.E) * "\n")
+        end
+        #print("Before: Progenitor: " * string([p.px, p.py, p.pz, p.E]) * ", and All particles: "*string(qj) * "\n")
+        #print("Before: Progenitor: " * string([p.px, p.py, p.pz, p.E]) * ", and All particles: "*string(qj[4]^2 - qj[1]^2 - qj[2]^2 - qj[3]^2) * "\n")
+        
         rotateMomentaLab(p, jet.AllParticles)
+        #print(string(length(p.children))*"\n")
+        qj =[0, 0, 0, 0]
+        for p2 in jet.AllParticles   
+            qj += [p2.px, p2.py, p2.pz, p2.E]
+            #print("px = " * string(p.px) * ", py = " * string(p.py) * ", pz = " * string(p.pz) * ", E = "* string(p.E) * "\n")
+        end
+        #print("After: Progenitor: " * string([p.px, p.py, p.pz, p.E]) * ", and All particles: "*string(qj) * "\n")
+        #print("After: Progenitor: " * string([p.px, p.py, p.pz, p.E]) * ", and All particles: "*string(qj[4]^2 - qj[1]^2 - qj[2]^2 - qj[3]^2) * "\n")
+        =#
         append!(AllParticles, jet.AllParticles)
         push!(jets, jet)
     end
 
-    append!(newEvent.AllParticles, globalMomCons(AllParticles, jets))
-
+    try 
+        append!(newEvent.AllParticles, globalMomCons(AllParticles, jets))
+    catch
+        n += 1
+        print("Vetoing event "* string(n) * "\n")
+        newEvent = Event(event.Jets, event.Jets)
+    end
     return newEvent
 end

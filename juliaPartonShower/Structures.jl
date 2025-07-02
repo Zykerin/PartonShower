@@ -26,6 +26,7 @@ mutable struct Particle
     color::Int32
     antiColor::Int32
     alpha::Float64
+    beta::Float64
     virtuality::Float64
     continueEvolution::Bool
     aorb::String

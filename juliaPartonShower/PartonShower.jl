@@ -15,7 +15,8 @@ using ProgressMeter
 
 inputFile::String = "eejj_ECM206_1E6.lhe.gz"
 #inputFile::String = "eejj_ECM206.lhe.gz"
-outputFile::String = "Tester.lhe"
+outputFile::String = "juliaFullpT.lhe"
+#outputFile::String = "Tester.lhe"
 
 events = parse_lhe(inputFile)
 
@@ -25,7 +26,7 @@ myEvents = []
 for ev in events
     newEvent = Event([], [])
     for p in ev.particles
-        newP = Particle(p.id, p.status, 0, 1, p.m, 0, p.px, p.py, p.pz, p.e, 0, [p.px, p.py, p.pz, p.e], p.color1, p.color2, 1, 0, true, "", [])
+        newP = Particle(p.id, p.status, 0, 1, p.m, 0, p.px, p.py, p.pz, p.e, 0, [0, 0, 0, 0], p.color1, p.color2, 1, 0, 0, true, "", [])
         push!(newEvent.Jets, newP)
     end
     push!(myEvents, newEvent)
@@ -38,6 +39,11 @@ showeredEvents = []
     newEvent = showerEvent(ev, pTmin, aSover)
     push!(showeredEvents, newEvent)
 end
+
+for p in myEvents
+
+end
+
 
 showeredEV = []
 # Turn my format into one that is readable by the LHEWriter

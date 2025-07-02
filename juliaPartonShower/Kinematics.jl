@@ -37,8 +37,6 @@ end
 # Function to rotate the particle to allign with the mother particle's momentum in the lab frame
 function rotateMomentaLab(p::Particle, particles::Vector{Particle})
 
-    rotatedParticles = []
-
     pmag = sqrt(p.px^2 + p.py^2 + p.pz^2)
     m = getRotationMatrix([0, 0, pmag], [p.px, p.py, p.pz])
     for p in particles
@@ -47,7 +45,7 @@ function rotateMomentaLab(p::Particle, particles::Vector{Particle})
         p.px = rotatedVec[1]
         p.py = rotatedVec[2]
         p.pz = rotatedVec[3]
-        push!(rotatedParticles, p)
+
 
     end
 end
@@ -99,7 +97,7 @@ end
 function solvekFactor(pj::Vector{Float64}, qj::Vector{Float64}, s::Float64)
     # Turn the function into one that can be parsed with the arguements into the root finder
     kEQ = (k -> kEq(k, pj, qj, s))
-    sol = find_zero(kEQ, 1.01)
+    sol = find_zero(kEQ, 0.99)
     return sol
 end
 
@@ -126,7 +124,7 @@ function globalMomCons(showeredParticles::Vector{Particle}, Jets::Vector{Jet})
         sqrts += jet.Progenitor.E
 
         # Get the total jet's momentum after showering
-        newq = [0, 0, 0, 0]
+        newq = Float64[0, 0, 0, 0]
         for p in jet.AllParticles
             newq += [p.px, p.py, p.pz, p.E]
         end
@@ -145,7 +143,6 @@ function globalMomCons(showeredParticles::Vector{Particle}, Jets::Vector{Jet})
 
     # Get the k factor
     k = solvekFactor(pj, qj, sqrts)
-
     rotatedShoweredParticles = []
 
     # Get the electron's and postirons and append them to the list of roated showered particles since these don't need to be rotated
@@ -184,6 +181,7 @@ end
 function reconSudakovBasis(prog::Particle, progPart::Particle)
     # If the progenitor particle has not emitted, or is in final state, then do not reconstruct the basis
     if prog.status == 1
+
         return
     end
     current = prog.children[1]
@@ -191,14 +189,15 @@ function reconSudakovBasis(prog::Particle, progPart::Particle)
     stack = [prog]
 
     # If the stack is empty and the currently selected particle has no children, i.e. final state, then stop the tree search
+    # This loop just calculateds the relative transverse momentum and alphas
     while length(stack) != 0 || current.status == -1
 
         # If the current particle is initial state, i.e. there is an emisison, then append the current particle to the stack
         # then calculate the emisison of the current particle and then select the next particle as the first child in the 
         # list of children.
         if current.status == -1
-            push!(stack, current)
             calculatePhysicals(current, prog, progPart, parent)
+            push!(stack, current)
             parent = current
             current = current.children[1]
         
@@ -211,21 +210,112 @@ function reconSudakovBasis(prog::Particle, progPart::Particle)
         end
 
     end
+    # Algorithm misses most right particle in the tree since it ends after the current particle is set to the most right hand
+    # so this calculates the basis for this particle.
     calculatePhysicals(current, prog, progPart, parent)
 
 
+    current = prog
+    stack = []
+
+    # This goes through the list and calculates each beta from the final state partons up to the progenitor
+    # If the stack is empty and the current off shell particle has no children whos betas are zero, we are done
+    while length(stack) != 0 || (current.status == -1 && (current.children[1].beta == 0  || current.children[2].beta == 0 ))
+
+        # Cases for when the current particle is off shell
+        if current.status == -1 
+            # If its first child has a zero beta then append itself to the stack and go to the first child
+            if current.children[1].beta == 0 
+                #print("Hit child 1 \n")
+                push!(stack, current)
+                current = current.children[1]
+            # Check same with the second child
+            elseif current.children[2].beta == 0
+                #print("Hit child 2 \n")
+                push!(stack, current)
+                current = current.children[2]
+            # If both childre have a nonzero beta, then caclulate this particles beta and go to its parent/ top in stack
+            else
+                calcBetai(current, prog, progPart)
+                current = pop!(stack)
+            end
+
+        # If the current particle is final state/on-shell, then claculate its beta and go to its parent particle
+        elseif current.status == 1
+            calcBetai(current, prog, progPart)
+            current = pop!(stack)
+        
+        end
+
+    end
+
+
+
+
+    current = prog.children[1]
+    parent = prog
+    stack = [prog]
+    
+    # If the stack is empty and the currently selected particle has no children, i.e. final state, then stop the tree search
+    # This algothim purely checks that the betas line up
+    while length(stack) != 0 || current.status == -1
+
+        # If the current particle is initial state, i.e. there is an emisison, then append the current particle to the stack
+        # then calculate the emisison of the current particle and then select the next particle as the first child in the 
+        # list of children.
+        if current.status == -1
+            finalizeSudakov(current, prog, progPart)
+            push!(stack, current)
+            parent = current
+            current = current.children[1]
+        
+        # If the current particle is final state, i.e. no emission, then calculate its phyiscals, then select the next particle
+        # as the second child of its parent and remove this parent of the stack of particles
+        elseif current.status == 1
+            finalizeSudakov(current, prog, progPart)
+            parent = pop!(stack)
+            current = parent.children[2]
+        end
+
+    end
+    # Algorithm misses most right particle in the tree since it ends after the current particle is set to the most right hand
+    # so this calculates the basis for this particle.
+    finalizeSudakov(current, prog, progPart)
+end
+
+# Function to calculate the beta of a given particle
+function calcBetai(part::Particle, prog::Particle, progPart::Particle)
+    # Case for when the particle is on-shell
+    if part.status == 1
+        pmag = sqrt(prog.px^2 + prog.py^2 + prog.pz^2)
+        nmag = sqrt(progPart.px^2 + progPart.py^2 + progPart.pz^2)
+
+        pdotn = dot4Vec([0, 0, pmag, pmag], [0, 0, -nmag, nmag])
+
+        betai = (part.virtuality - part.alpha^2 * part.m^2 - (-part.qT[1]^2 - part.qT[2]^2)) / (2 * part.alpha * pdotn)
+        part.beta = betai
+    # Case for when the particle is off-shell which is caculated iteratively from its children
+    elseif part.status == -1
+        betai = part.children[1].beta + part.children[2].beta
+        part.beta = betai
+    end
+end
+
+# Function to finally reconstruct the sudakov basis
+function finalizeSudakov(part::Particle, prog::Particle, progPart::Particle)
+    pmag = sqrt(prog.px^2 + prog.py^2 + prog.pz^2)
+    nmag = sqrt(progPart.px^2 + progPart.py^2 + progPart.pz^2)
+    part.px =  part.qT[1]
+    part.py = part.qT[2]
+    part.pz = part.alpha * pmag + part.beta * (-nmag)
+    part.E = part.alpha * pmag + part.beta * (nmag)
 end
 
 # Function to actually calculate the phyiscals of the sudakov basis for a given particle
 function calculatePhysicals(part::Particle, prog::Particle, progPart::Particle, parent::Particle)
-    pmag = sqrt(prog.px^2 + prog.py^2 + prog.pz^2)
-    nmag = sqrt(progPart.px^2 + progPart.py^2 + progPart.pz^2)
-    #pdotn = dot4Vec([prog.px, prog.py, prog.pz, prog.E], [progPart.px, progPart.py, progPart.pz, progPart.E])
-    pdotn = dot4Vec([0, 0, pmag, pmag], [0, 0, -nmag, nmag])
 
     alpha = parent.alpha * part.z
     part.alpha = alpha
-    qi2 = part.virtuality
     
   
 
@@ -235,17 +325,9 @@ function calculatePhysicals(part::Particle, prog::Particle, progPart::Particle, 
         kT = [part.pT * cos(part.phi), part.pT * sin(part.phi), 0 , 0] # pT = (px, py, pz, E)
     end
     part.qT = [parent.qT[1] * part.z + kT[1], parent.qT[2] * part.z + kT[2], 0, 0] # qT = (px, py, pz, E)
-    betai = (qi2 - part.alpha^2 * part.m^2 - (-part.qT[1]^2 - part.qT[2]^2)) / (2 * part.alpha * pdotn)
+    
 
-    #part.px = alpha * prog.px + betai * progPart.px + part.qT[1]
-    #part.py = alpha * prog.py + betai * progPart.py + part.qT[2]
-    #part.pz = alpha * prog.pz + betai * progPart.pz
-    #part.E = alpha * prog.E + betai * progPart.E
-
-    part.px = alpha * 0 + betai * 0 + part.qT[1]
-    part.py = alpha * 0 + betai * 0+ part.qT[2]
-    part.pz = alpha * pmag + betai * (-nmag)
-    part.E = alpha * pmag + betai * (nmag)
+  
 
 end
 

@@ -2,7 +2,7 @@ include("alphaS.jl")
 
 
 
-
+global nEventVeto::Int64 = 0
 
 
 #global const t0 = 1
@@ -11,7 +11,8 @@ global const Qc = 0.935
 #global const Qc::Float64 = 0.65471
 aSover::Float64 = AlphaQ(Qc) # The overestimate for the coupling constants
 
-global const pTmin::Float64 = 0.65471
+#global const pTmin::Float64 = 0.65471
+global const pTmin::Float64 = 0.900
 global const pT2min::Float64 = pTmin^2
 
 

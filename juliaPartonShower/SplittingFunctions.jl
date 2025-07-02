@@ -4,16 +4,16 @@ include("Constants.jl")
 
 # The g -> gg splitting function, overestimate, integral, and integral inverse
 function Pgg(z::Float64)
-    return 2 * Ca * ((1 - z * (1-z))^2) / (z * (1-z))
+    return  Ca * ((1 - z * (1-z))^2) / (z * (1-z))
 end
 function Pgg_over(z::Float64)
     return Ca * (1/(1-z) + 1/z)
 end
 function Intgg(z::Float64, aSover::Float64)
-    return -Ca * (aSover) * log(1/z - 1)
+    return -Ca * (aSover / (2 * pi)) * log(1/z - 1)
 end
 function InvInt_gg(z::Float64, aSover::Float64)
-    return 1 / (1 + exp(-z/ (Ca * aSover)))
+    return 1 / (1 + exp(-z/ (Ca * aSover / (2 * pi))))
 end
 
 
