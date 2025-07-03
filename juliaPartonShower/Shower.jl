@@ -281,7 +281,7 @@ function evolveParticle(pa::Particle, pb::Particle, pc::Particle, Qcut::Float64,
     pc.E = sqrt(pc.px^2 + pc.py^2 + pc.pz^2)
     =#
 
-    pa.status = -1 # Set the emitting particle Particlto initial state for emission
+    pa.status = -1 # Set the emitting particle Particle's status to -1 so as to indicate that it is an intermediate particle
 
     pb.aorb = "b"
     pc.aorb = "c"

@@ -179,7 +179,7 @@ end
 
 # Function to reconstruct the sudakov basis for the entire tree with the progenitor being the starting root 
 function reconSudakovBasis(prog::Particle, progPart::Particle)
-    # If the progenitor particle has not emitted, or is in final state, then do not reconstruct the basis
+    # If the progenitor particle has not emitted/on-shell, then do not reconstruct the basis
     if prog.status == 1
         return
     end
@@ -187,11 +187,11 @@ function reconSudakovBasis(prog::Particle, progPart::Particle)
     parent = prog
     stack = [prog]
 
-    # If the stack is empty and the currently selected particle has no children, i.e. final state, then stop the tree search
+    # If the stack is empty and the currently selected particle has no children, i.e. off-shell then stop the tree search
     # This loop just calculateds the relative transverse momentum and alphas
     while length(stack) != 0 || current.status == -1
 
-        # If the current particle is initial state, i.e. there is an emisison, then append the current particle to the stack
+        # If the current particle is off-shell i.e. there is an emisison, then append the current particle to the stack
         # then calculate the emisison of the current particle and then select the next particle as the first child in the 
         # list of children.
         if current.status == -1
@@ -200,7 +200,7 @@ function reconSudakovBasis(prog::Particle, progPart::Particle)
             parent = current
             current = current.children[1]
         
-        # If the current particle is final state, i.e. no emission, then calculate its phyiscals, then select the next particle
+        # If the current particle is on-shell, i.e. no emission, then calculate its phyiscals, then select the next particle
         # as the second child of its parent and remove this parent of the stack of particles
         elseif current.status == 1
             calculatePhysicals(current, prog, progPart, parent)
@@ -236,12 +236,14 @@ function reconSudakovBasis(prog::Particle, progPart::Particle)
             # If both childre have a nonzero beta, then caclulate this particles beta and go to its parent/ top in stack
             else
                 calcBetai(current, prog, progPart)
+                finalizeSudakov(current, prog, progPart)
                 current = pop!(stack)
             end
 
-        # If the current particle is final state/on-shell, then claculate its beta and go to its parent particle
+        # If the current particle is on-shell, then claculate its beta and go to its parent particle
         elseif current.status == 1
             calcBetai(current, prog, progPart)
+            finalizeSudakov(current, prog, progPart)
             current = pop!(stack)
         
         end
@@ -250,36 +252,6 @@ function reconSudakovBasis(prog::Particle, progPart::Particle)
 
 
 
-
-    current = prog.children[1]
-    parent = prog
-    stack = [prog]
-    
-    # If the stack is empty and the currently selected particle has no children, i.e. final state, then stop the tree search
-    # This algothim purely checks that the betas line up
-    while length(stack) != 0 || current.status == -1
-
-        # If the current particle is initial state, i.e. there is an emisison, then append the current particle to the stack
-        # then calculate the emisison of the current particle and then select the next particle as the first child in the 
-        # list of children.
-        if current.status == -1
-            finalizeSudakov(current, prog, progPart)
-            push!(stack, current)
-            parent = current
-            current = current.children[1]
-        
-        # If the current particle is final state, i.e. no emission, then calculate its phyiscals, then select the next particle
-        # as the second child of its parent and remove this parent of the stack of particles
-        elseif current.status == 1
-            finalizeSudakov(current, prog, progPart)
-            parent = pop!(stack)
-            current = parent.children[2]
-        end
-
-    end
-    # Algorithm misses most right particle in the tree since it ends after the current particle is set to the most right hand
-    # so this calculates the basis for this particle.
-    finalizeSudakov(current, prog, progPart)
 end
 
 # Function to calculate the beta of a given particle
