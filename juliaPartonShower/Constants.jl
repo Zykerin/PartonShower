@@ -1,4 +1,4 @@
-include("alphaS.jl")
+include("alphaS_HW.jl")
 
 
 
@@ -8,7 +8,10 @@ include("alphaS.jl")
 #global const Q = 1000
 global const Qc = 0.935
 #global const Qc::Float64 = 0.65471
-aSover::Float64 = AlphaQ(Qc) # The overestimate for the coupling constants
+# Initialize the alphaS variable
+initializeAlphaS(0.1074, 91.1876)
+
+aSover::Float64 = alphaQ(Qc) # The overestimate for the coupling constants
 
 #global const pTmin::Float64 = 0.65471
 global const pTmin::Float64 = 0.900
