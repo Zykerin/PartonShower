@@ -181,7 +181,6 @@ end
 function reconSudakovBasis(prog::Particle, progPart::Particle)
     # If the progenitor particle has not emitted, or is in final state, then do not reconstruct the basis
     if prog.status == 1
-
         return
     end
     current = prog.children[1]

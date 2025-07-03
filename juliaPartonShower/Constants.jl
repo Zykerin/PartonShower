@@ -2,7 +2,6 @@ include("alphaS.jl")
 
 
 
-global nEventVeto::Int64 = 0
 
 
 #global const t0 = 1

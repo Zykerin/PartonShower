@@ -40,10 +40,6 @@ showeredEvents = []
     push!(showeredEvents, newEvent)
 end
 
-for p in myEvents
-
-end
-
 
 showeredEV = []
 # Turn my format into one that is readable by the LHEWriter

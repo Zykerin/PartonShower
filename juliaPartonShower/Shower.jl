@@ -336,6 +336,7 @@ function showerEvent(event, Qmin::Float64, aSover::Float64)
     plist = Particle[]
     jets = Jet[]
     AllParticles = Particle[]
+    oldEvent = deepcopy(event)
     # Go through the list of particles in the event and get the ones that will be showered and append them to a list
     # This is needed since both particles are needed for the initial evolution scale
     for p in event.Jets
@@ -356,25 +357,6 @@ function showerEvent(event, Qmin::Float64, aSover::Float64)
         showerParticle(jet, p, Qmin, aSover)
         part = findColorPartner(p, plist)
         reconSudakovBasis(p, part)
-        #=
-        qj =[0, 0, 0, 0]
-        for p2 in jet.AllParticles   
-            qj += [p2.px, p2.py, p2.pz, p2.E]
-            #print("px = " * string(p.px) * ", py = " * string(p.py) * ", pz = " * string(p.pz) * ", E = "* string(p.E) * "\n")
-        end
-        #print("Before: Progenitor: " * string([p.px, p.py, p.pz, p.E]) * ", and All particles: "*string(qj) * "\n")
-        #print("Before: Progenitor: " * string([p.px, p.py, p.pz, p.E]) * ", and All particles: "*string(qj[4]^2 - qj[1]^2 - qj[2]^2 - qj[3]^2) * "\n")
-        
-        rotateMomentaLab(p, jet.AllParticles)
-        #print(string(length(p.children))*"\n")
-        qj =[0, 0, 0, 0]
-        for p2 in jet.AllParticles   
-            qj += [p2.px, p2.py, p2.pz, p2.E]
-            #print("px = " * string(p.px) * ", py = " * string(p.py) * ", pz = " * string(p.pz) * ", E = "* string(p.E) * "\n")
-        end
-        #print("After: Progenitor: " * string([p.px, p.py, p.pz, p.E]) * ", and All particles: "*string(qj) * "\n")
-        #print("After: Progenitor: " * string([p.px, p.py, p.pz, p.E]) * ", and All particles: "*string(qj[4]^2 - qj[1]^2 - qj[2]^2 - qj[3]^2) * "\n")
-        =#
         append!(AllParticles, jet.AllParticles)
         push!(jets, jet)
     end
@@ -382,9 +364,7 @@ function showerEvent(event, Qmin::Float64, aSover::Float64)
     try 
         append!(newEvent.AllParticles, globalMomCons(AllParticles, jets))
     catch
-        n += 1
-        print("Vetoing event "* string(n) * "\n")
-        newEvent = Event(event.Jets, event.Jets)
+        newEvent = Event(oldEvent.Jets, oldEvent.Jets)
     end
     return newEvent
 end
