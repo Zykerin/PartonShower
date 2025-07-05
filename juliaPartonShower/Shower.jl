@@ -370,7 +370,8 @@ function showerEvent(event, Qmin::Float64, aSover::Float64)
     plist = Particle[]
     jets = Jet[]
     AllParticles = Particle[]
-    oldEvent = deepcopy(event)
+    oldEvent = deepcopy(event) # Make a copy of the event in case a full event veto needs to be done
+
     # Go through the list of particles in the event and get the ones that will be showered and append them to a list
     # This is needed since both particles are needed for the initial evolution scale
     for p in event.Jets
@@ -386,7 +387,7 @@ function showerEvent(event, Qmin::Float64, aSover::Float64)
     plist[1].t, plist[2].t = EvolutionScale(plist[1], plist[2])
 
     # Get the current larges color value for this event
-    global currentcolor::Int32 = maximum([p.color for p in plist])
+    global currentcolor = maximum([p.color for p in plist])
 
     for (i, p) in enumerate(plist)
         jet = Jet([], p)
@@ -398,6 +399,8 @@ function showerEvent(event, Qmin::Float64, aSover::Float64)
         push!(jets, jet)
     end
 
+    # Test to see if the momentum reconstruction has worked. If an error is thrown, ususually from the finding k part, then the reconstruction has failed 
+    # and the event needs to be vetoed. 
     try 
         append!(newEvent.AllParticles, globalMomCons(AllParticles, jets))
     catch

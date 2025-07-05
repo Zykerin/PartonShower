@@ -35,8 +35,15 @@ function writeLHE(infile, events, shat, ECM, sigma, stddev)
             if abs(p[1]) == 11
                 append!(colours, 0)
                 append!(anticolours, 0)
+            else
+                append!(colours, Int(p[8]))
+                append!(anticolours, Int(p[9]))
             end
+            
+            
+            #=
             if abs(p[1]) > 0 && abs(p[1]) < 6 # q or qbar -> this only works for the specific process e+e- -> qqbar
+                
                 if p[1] < 0
                     append!(colours, 0)
                     append!(anticolours, 501)
@@ -51,6 +58,7 @@ function writeLHE(infile, events, shat, ECM, sigma, stddev)
                 append!(colours, 500 + 2 * ng)
                 append!(anticolours, 500+ 2 * ng)
             end
+            =#
         end
         
         
