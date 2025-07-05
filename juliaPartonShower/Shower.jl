@@ -261,6 +261,40 @@ function evolveParticle(pa::Particle, pb::Particle, pc::Particle, Qcut::Float64,
     pb.m = 0
     pc.m = 0
 
+    # Now apply the color structure 
+    newcolor = currentcolor + 1
+    global currentcolor = newcolor
+    # Case for when the emitting particle is a gluon
+    if abs(pa.id) == 21
+        # Case for g -> gg
+        if abs(pb.id) == 21
+
+            pb.antiColor = pa.antiColor
+            pb.color = newcolor
+            pc.color = pa.color
+            pc.antiColor = -newcolor
+        # Case for g -> qqbar
+        else 
+            pb.color = pa.color
+            pc.color = pa.antiColor
+        end
+    # Case for  quark emitting, so currently only q -> qg
+    else
+        # Need to check whether emitting quark is an antiquark or not
+        # For antiquark, qbar -> qbarg
+        if pa.id < 0
+            pb.antiColor = -newcolor
+            pc.antiColor = pa.antiColor
+            pc.color = newcolor
+        # Case for q -> qg splitting
+        else
+            pb.color = newcolor
+            pc.color = pa.color
+            pc.antiColor = -newcolor
+        end
+
+    end
+
     pb.phi = emission.phi 
     pc.phi = emission.phi
 
@@ -311,8 +345,8 @@ function showerParticle(jet::Jet, particle::Particle, Qmin::Float64, aSover::Flo
         end
         pa = jet.AllParticles[i]
         # Get the child particles' templates
-        pb = Particle(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, [], 1, 1, 0, 0, 0, true, "", [])
-        pc = Particle(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, [], 1, 1, 0, 0, 0, true, "", [])
+        pb = Particle(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, [], 0, 0, 0, 0, 0, true, "", [])
+        pc = Particle(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, [], 0, 0, 0, 0, 0, true, "", [])
         evolveParticle(pa, pb, pc, Qmin, aSover)
         # If the evolution is terminated, end this branch
         if pa.continueEvolution == false
@@ -350,6 +384,9 @@ function showerEvent(event, Qmin::Float64, aSover::Float64)
 
     # Set the initial evolution scale for the two progenitors
     plist[1].t, plist[2].t = EvolutionScale(plist[1], plist[2])
+
+    # Get the current larges color value for this event
+    global currentcolor = maximum([p.color for p in plist])
 
     for (i, p) in enumerate(plist)
         jet = Jet([], p)
