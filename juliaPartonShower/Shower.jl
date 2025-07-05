@@ -272,7 +272,7 @@ function evolveParticle(pa::Particle, pb::Particle, pc::Particle, Qcut::Float64,
             pb.antiColor = pa.antiColor
             pb.color = newcolor
             pc.color = pa.color
-            pc.antiColor = -newcolor
+            pc.antiColor = newcolor
         # Case for g -> qqbar
         else 
             pb.color = pa.color
@@ -283,14 +283,14 @@ function evolveParticle(pa::Particle, pb::Particle, pc::Particle, Qcut::Float64,
         # Need to check whether emitting quark is an antiquark or not
         # For antiquark, qbar -> qbarg
         if pa.id < 0
-            pb.antiColor = -newcolor
+            pb.antiColor = newcolor
             pc.antiColor = pa.antiColor
             pc.color = newcolor
         # Case for q -> qg splitting
         else
             pb.color = newcolor
             pc.color = pa.color
-            pc.antiColor = -newcolor
+            pc.antiColor = newcolor
         end
 
     end
@@ -386,7 +386,7 @@ function showerEvent(event, Qmin::Float64, aSover::Float64)
     plist[1].t, plist[2].t = EvolutionScale(plist[1], plist[2])
 
     # Get the current larges color value for this event
-    global currentcolor = maximum([p.color for p in plist])
+    global currentcolor::Int32 = maximum([p.color for p in plist])
 
     for (i, p) in enumerate(plist)
         jet = Jet([], p)
