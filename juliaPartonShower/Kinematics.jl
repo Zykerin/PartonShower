@@ -349,6 +349,5 @@ function checkGlobalMomCons(ev::Event)
             tot += [p.px, p.py, p.pz, p.E]
         end
     end
-
     print("The total momentum is " * string(tot)* "\n")
 end
