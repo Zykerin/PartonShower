@@ -9,7 +9,7 @@ function writeLHE(infile, events, shat, ECM, sigma, stddev)
     write(file, "File generated with lhe Julia writer\n")
     write(file, "-->\n")
     write(file, "<init>\n")
-    write(file, "\t11\t -11\t" * string(ECM/2) * "\t" * string(ECM/2) * "\t 0 \t 0 \t 7\t 7 \t 1 \t 1\n")
+    write(file, "\t-11\t 11\t" * string(ECM/2) * "\t" * string(ECM/2) * "\t 0 \t 0 \t 7\t 7 \t 1 \t 1\n")
     write(file, "\t" * string(sigma) * "\t" * string(stddev) * "\t1.00000 \t9999\n")
     write(file, "</init>\n")
 
