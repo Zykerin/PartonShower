@@ -364,9 +364,9 @@ function showerParticle(jet::Jet, particle::Particle, Qmin::Float64, aSover::Flo
 end
 
 
-function showerEvent(event, Qmin::Float64, aSover::Float64)
+function showerEvent(event::Event, Qmin::Float64, aSover::Float64)
 
-    newEvent= Event([], [])
+    newerEvent= Event([], [])
     plist = Particle[]
     jets = Jet[]
     AllParticles = Particle[]
@@ -393,8 +393,11 @@ function showerEvent(event, Qmin::Float64, aSover::Float64)
         jet = Jet([], p)
 
         showerParticle(jet, p, Qmin, aSover)
-        part = findColorPartner(p, plist)
-        reconSudakovBasis(p, part)
+        partColor = findColorPartner(p, plist)
+        
+        reconSudakovBasis(p, partColor)
+        rotateMomentaLab(p, jet.AllParticles)
+
         append!(AllParticles, jet.AllParticles)
         push!(jets, jet)
     end
@@ -402,9 +405,27 @@ function showerEvent(event, Qmin::Float64, aSover::Float64)
     # Test to see if the momentum reconstruction has worked. If an error is thrown, ususually from the finding k part, then the reconstruction has failed 
     # and the event needs to be vetoed. 
     try 
-        append!(newEvent.AllParticles, globalMomCons(AllParticles, jets))
+        append!(newerEvent.AllParticles, globalMomCons(AllParticles, jets))
     catch
-        newEvent = Event(oldEvent.Jets, oldEvent.Jets)
+        newerEvent = Event(oldEvent.Jets, oldEvent.Jets)
     end
-    return newEvent
+
+    # Check for if any of the reconstructed values are NaN 
+    checkNaN = []
+    for p in newerEvent.AllParticles
+        if isnan(p.px)
+            print("px= " * string(p.px) * ", py= " * string(p.py) * ", pz= " * string(p.pz)*", E= " * string(p.E) * "\n")
+         append!(checkNaN, true)
+        else
+            append!(checkNaN, false)
+        end
+    end
+    
+    # If they are, then reshower this event
+    if any(checkNaN)
+        print("Reshowering \n")
+        newerEvent = showerEvent(oldEvent, Qmin, aSover)
+    end
+
+    return newerEvent
 end
