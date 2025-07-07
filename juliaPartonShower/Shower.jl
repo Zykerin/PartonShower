@@ -118,11 +118,11 @@ function genEmissions2(Q::Float64, Qcut::Float64, aSover::Float64, branchType::I
         generated = false
     end
     if branchType == 1
-        z = zEmission(t, R2, aSover, Intgg, InvInt_gg, masses, branchType)
+        z = zEmission(Q^2, R2, aSover, Intgg, InvInt_gg, masses, branchType)
     elseif branchType == 2
-        z = zEmission(t, R2, aSover, Intqq, InvInt_qq, masses, branchType)
+        z = zEmission(Q^2, R2, aSover, Intqq, InvInt_qq, masses, branchType)
     elseif branchType == 3
-        z = zEmission(t, R2, aSover, Intgq, InvInt_gq, masses, branchType)
+        z = zEmission(Q^2, R2, aSover, Intgq, InvInt_gq, masses, branchType)
     end
     # Ensure that the upper bounds is greater than the lower bounds
     if zlow > zup
@@ -131,7 +131,7 @@ function genEmissions2(Q::Float64, Qcut::Float64, aSover::Float64, branchType::I
 
     # Check the ensure that z is within the limits
     if z > zup || z < zlow
-        generated = falseTester
+        generated = false
     end
 
     # Get the transverse momentum squared
@@ -416,7 +416,7 @@ function showerEvent(event::Event, Qmin::Float64, aSover::Float64)
     for p in newerEvent.AllParticles
         if isnan(p.px)
             print("px= " * string(p.px) * ", py= " * string(p.py) * ", pz= " * string(p.pz)*", E= " * string(p.E) * "\n")
-         append!(checkNaN, true)
+            append!(checkNaN, true)
         else
             append!(checkNaN, false)
         end

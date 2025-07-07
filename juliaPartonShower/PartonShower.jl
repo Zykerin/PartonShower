@@ -8,10 +8,10 @@ using ProgressBars
 
 
 
-inputFile::String = "eejj_ECM206_1E6.lhe.gz"
-#inputFile::String = "eejj_ECM206.lhe.gz"
-outputFile::String = "juliaColorStructure.lhe"
-#outputFile::String = "juliaColorStructureSmall.lhe"
+#inputFile::String = "eejj_ECM206_1E6.lhe.gz"
+inputFile::String = "eejj_ECM206.lhe.gz"
+#outputFile::String = "juliaColorStructure.lhe"
+outputFile::String = "juliaColorStructureSmall.lhe"
 
 events = parse_lhe(inputFile)
 
@@ -33,12 +33,13 @@ showeredEvents = []
 for (i, ev) in tqdm(enumerate(myEvents))
     newEvent = showerEvent(ev, pTmin, aSover)
     for p in newEvent.AllParticles
-
+        #checkMomCons(p)
             if isnan(p.px)
                 print(string(i) * "\n")
             end
 
     end
+    #checkGlobalMomCons(newEvent )
     push!(showeredEvents, newEvent)
 end
 

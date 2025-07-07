@@ -8,7 +8,7 @@ function getRotationMatrix(v1::Vector{Float64}, v2::Vector{Float64})
     # The the cross product of two vectors
     k = cross(v1, v2)
 
-    if norm(k) == 0
+    if norm(k) < 1E-12
         return [1 0 0; 0 1 0; 0 0 1]
     else
         # Get unit vector of k
@@ -59,12 +59,12 @@ function boostFactor(k::Float64, new::Vector{Float64}, old::Vector{Float64})
     kp = k * sqrt(old[1]^2 + old[2]^2 + old[3]^2)
     kps = kp^2
     betamag = (q * new[4] - kp * sqrt(kps + Q2)) / (kps + qs + Q2)
+
     beta = betamag * (k / kp) * Float64[old[1], old[2], old[3]]
 
-    if betamag >= -1E-10
+    if betamag >= -1E-5
         return beta
     else
-        print(string(betamag) * "\n")
         return Float64[0, 0, 0]
     end
 
@@ -72,14 +72,20 @@ end
 
 
 function boost(p::Particle, beta::Vector{Float64})
+    if beta == Float64[0, 0, 0]
+        return
+    end
 
     bmag = sqrt(beta[1]^2 + beta[2]^2 + beta[3]^2)
     gamma = 1/ sqrt(1 - bmag^2)
 
-    p.px = - gamma * beta[1] * p.E + (    1 + (gamma -1) * beta[1]^2 / bmag^2) * p.px + ( (gamma - 1) * beta[1] * beta[2] / bmag^2) * p.py +  ((gamma - 1) * beta[1] * beta[3] / bmag^2) * p.pz
-    p.py = - gamma * beta[2] * p.E + ( (gamma -1) * beta[1] * beta[2] / bmag^2) * p.px + (    1 + (gamma - 1) * beta[2]^2 / bmag^2) * p.py + ( (gamma - 1) * beta[2] * beta[3] / bmag^2) * p.pz
-    p.pz = - gamma * beta[3] * p.E + ( (gamma -1) * beta[1] * beta[3] / bmag^2) * p.px + ( (gamma - 1) * beta[3] * beta[2] / bmag^2) * p.py + (     1 + (gamma - 1) * beta[3]^2/ bmag^2) * p.pz
-    p.E =    gamma * p.E - gamma * beta[1] * p.px - gamma * beta[2] * p.py - gamma * beta[3] * p.pz
+    # Use the matrix of a lorentz boost from https://www.physicsforums.com/threads/general-matrix-representation-of-lorentz-boost.695941/
+    oldp = deepcopy(p)
+
+    p.px = - gamma * beta[1] * oldp.E + (     1 + (gamma -1) * beta[1]^2 / bmag^2) * oldp.px + ((gamma - 1) * beta[1] * beta[2] / bmag^2) * oldp.py +  ((gamma - 1) * beta[1] * beta[3] /bmag^2) * oldp.pz
+    p.py = - gamma * beta[2] * oldp.E + ( (gamma -1) * beta[1] * beta[2] / bmag^2) * oldp.px + (    1 + (gamma - 1) * beta[2]^2 / bmag^2) * oldp.py + ((gamma - 1) * beta[2] * beta[3] / bmag^2) * oldp.pz
+    p.pz = - gamma * beta[3] * oldp.E + ( (gamma -1) * beta[1] * beta[3] / bmag^2) * oldp.px + ((gamma - 1) * beta[3] * beta[2] / bmag^2) * oldp.py + (     1 + (gamma - 1) * beta[3]^2/ bmag^2) * oldp.pz
+    p.E =    gamma * oldp.E - gamma * beta[1] * oldp.px - gamma * beta[2] * oldp.py - gamma * beta[3] * oldp.pz
 end
 
 # The function to numerically solve to find k
@@ -323,4 +329,26 @@ function findColorPartner(parti::Particle, particles::Vector{Particle})
     end 
     return partner
 
+end
+
+# Function to check that momentum is conserved for each individual particle
+function checkMomCons(p::Particle)
+    energy = sqrt(p.px^2 + p.py^2 + p.pz^2)
+
+    if abs(energy - p.E) > 1E-5
+        print("Momentum not conserved: momentum = " * string(energy) * ", actual = " * string(p.E) * ", difference= " * string(abs(energy-p.E)) * "\n")
+    end
+
+end
+
+# Function to check the global momentum conservation
+function checkGlobalMomCons(ev::Event)
+    tot = [0, 0, 0, 0]
+    for p in ev.AllParticles
+        if p.status == 1
+            tot += [p.px, p.py, p.pz, p.E]
+        end
+    end
+
+    print("The total momentum is " * string(tot)* "\n")
 end
