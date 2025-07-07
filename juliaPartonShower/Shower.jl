@@ -271,12 +271,13 @@ function evolveParticle(pa::Particle, pb::Particle, pc::Particle, Qcut::Float64,
 
             pb.antiColor = pa.antiColor
             pb.color = newcolor
+
             pc.color = pa.color
             pc.antiColor = newcolor
         # Case for g -> qqbar
         else 
             pb.color = pa.color
-            pc.color = pa.antiColor
+            pc.antiColor = pa.antiColor
         end
     # Case for  quark emitting, so currently only q -> qg
     else
@@ -420,7 +421,7 @@ function showerEvent(event::Event, Qmin::Float64, aSover::Float64)
             append!(checkNaN, false)
         end
     end
-    
+
     # If they are, then reshower this event
     if any(checkNaN)
         print("Reshowering \n")
