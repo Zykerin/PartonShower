@@ -61,9 +61,10 @@ function boostFactor(k::Float64, new::Vector{Float64}, old::Vector{Float64})
     betamag = (q * new[4] - kp * sqrt(kps + Q2)) / (kps + qs + Q2)
     beta = betamag * (k / kp) * Float64[old[1], old[2], old[3]]
 
-    if betamag >= 0
+    if betamag >= -1E-10
         return beta
     else
+        print(string(betamag) * "\n")
         return Float64[0, 0, 0]
     end
 
@@ -144,7 +145,6 @@ function globalMomCons(showeredParticles::Vector{Particle}, Jets::Vector{Jet})
     # Get the k factor
     k = solvekFactor(pj, qj, sqrts)
     rotatedShoweredParticles = []
-
     # Get the electron's and postirons and append them to the list of roated showered particles since these don't need to be rotated
     for p in showeredParticles
         if abs(p.id) == 11
@@ -163,7 +163,6 @@ function globalMomCons(showeredParticles::Vector{Particle}, Jets::Vector{Jet})
             
             # Get the boost factor
             beta = boostFactor(k, newqs[i], oldps[i])
-
             # Iterate through the jet's particles and rotate and boost each one
             for p in jet.AllParticles
                 rotate(p, rotms[i])
@@ -257,7 +256,9 @@ end
 # Function to calculate the beta of a given particle
 function calcBetai(part::Particle, prog::Particle, progPart::Particle)
     # Case for when the particle is on-shell
-    if part.status == 1
+    if part == prog
+        
+    elseif part.status == 1
         pmag = sqrt(prog.px^2 + prog.py^2 + prog.pz^2)
         nmag = sqrt(progPart.px^2 + progPart.py^2 + progPart.pz^2)
 
@@ -274,6 +275,10 @@ end
 
 # Function to finally reconstruct the sudakov basis
 function finalizeSudakov(part::Particle, prog::Particle, progPart::Particle)
+    if part == prog
+        return 
+    end
+
     pmag = sqrt(prog.px^2 + prog.py^2 + prog.pz^2)
     nmag = sqrt(progPart.px^2 + progPart.py^2 + progPart.pz^2)
     part.px =  part.qT[1]
