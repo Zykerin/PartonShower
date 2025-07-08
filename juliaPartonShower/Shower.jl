@@ -397,8 +397,9 @@ function showerEvent(event::Event, Qmin::Float64, aSover::Float64)
         partColor = findColorPartner(p, plist)
         
         reconSudakovBasis(p, partColor)
+        
         rotateMomentaLab(p, jet.AllParticles)
-
+        
         append!(AllParticles, jet.AllParticles)
         push!(jets, jet)
     end
@@ -410,6 +411,7 @@ function showerEvent(event::Event, Qmin::Float64, aSover::Float64)
     catch
         newerEvent = Event(oldEvent.Jets, oldEvent.Jets)
     end
+
 
     # Check for if any of the reconstructed values are NaN 
     checkNaN = []

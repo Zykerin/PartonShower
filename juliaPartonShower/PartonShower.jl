@@ -30,16 +30,10 @@ end
 
 showeredEvents = []
 
+
+
 for (i, ev) in tqdm(enumerate(myEvents))
     newEvent = showerEvent(ev, pTmin, aSover)
-    for p in newEvent.AllParticles
-        #checkMomCons(p)
-            if isnan(p.px)
-                print(string(i) * "\n")
-            end
-
-    end
-    #checkGlobalMomCons(newEvent )
     push!(showeredEvents, newEvent)
 end
 

@@ -6,20 +6,20 @@ using LinearAlgebra
 # Get the rotation matrix for two given vectors
 function getRotationMatrix(v1::Vector{Float64}, v2::Vector{Float64})
     # The the cross product of two vectors
-    k = cross(v1, v2)
+    k1 = cross(v1, v2)
 
-    if norm(k) < 1E-12
+    if norm(k1) < 1E-12
         return [1 0 0; 0 1 0; 0 0 1]
     else
         # Get unit vector of k
-        k = k / norm(k)
+        k = k1 / norm(k1)
         # Get the k matrix
         K = [0 -k[3] k[2]; k[3] 0 -k[1]; -k[2] k[1] 0]
         
         theta = acos(clamp(dot(v1/norm(v1), v2/norm(v2)), -1, 1))
 
         # Get the rotation matrix
-        rotMat = I + sin(theta) * K + (1 - cos(theta)) * K^2
+        rotMat = [1 0 0; 0 1 0; 0 0 1] + sin(theta) * K + (1 - cos(theta)) * K^2
         return rotMat
     end
 end
@@ -36,15 +36,19 @@ end
 
 # Function to rotate the particle to allign with the mother particle's momentum in the lab frame
 function rotateMomentaLab(p::Particle, particles::Vector{Particle})
-
+    # If the progenitor has not been radiated, then there is no reason to rotate it.
+    if p.status ==1
+        return
+    end
     pmag = sqrt(p.px^2 + p.py^2 + p.pz^2)
+
     m = getRotationMatrix([0, 0, pmag], [p.px, p.py, p.pz])
-    for p in particles
-        v = [p.px, p.py, p.pz]
+    for p2 in particles
+        v = [p2.px, p2.py, p2.pz]
         rotatedVec = m * v
-        p.px = rotatedVec[1]
-        p.py = rotatedVec[2]
-        p.pz = rotatedVec[3]
+        p2.px = rotatedVec[1]
+        p2.py = rotatedVec[2]
+        p2.pz = rotatedVec[3]
 
 
     end
@@ -165,8 +169,10 @@ function globalMomCons(showeredParticles::Vector{Particle}, Jets::Vector{Jet})
             push!(rotatedShoweredParticles, j.AllParticles[1])
         end
     else
+        if length(Jets[1].AllParticles) == 1 || length(Jets[2].AllParticles) == 1
+        end
         for (i, jet) in enumerate(Jets)
-            
+        
             # Get the boost factor
             beta = boostFactor(k, newqs[i], oldps[i])
             # Iterate through the jet's particles and rotate and boost each one
@@ -349,5 +355,6 @@ function checkGlobalMomCons(ev::Event)
             tot += [p.px, p.py, p.pz, p.E]
         end
     end
+
     print("The total momentum is " * string(tot)* "\n")
 end
