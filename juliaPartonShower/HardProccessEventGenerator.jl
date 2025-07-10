@@ -105,7 +105,7 @@ function mcInt(func, x1, x2, N)
         # Set the total of the sum to 0
         functot = 0
         # Sum over the quark favors 
-        for i in range(1, 5)
+        for i in range(1, 4)
             if i == 1
                 q =1
             elseif i == 2
@@ -177,7 +177,7 @@ function eventGen(func, x1, x2, nGen, nInt)
         # Set the total of the sum to 0
         functot = 0
         # Sum over the quark favors 
-        for i in range(1, 5)
+        for i in range(1, 4)
             if i == 1
                 q =1
             elseif i == 2
@@ -216,13 +216,13 @@ function reconMomenta(events)
         phi = rand() * 2 * pi
         sinth = sqrt(1-costh^2)
         # Make the electron and positron
-        elec = Particle(11, -1, 0, 0, 0, 0, 0, 0, energy, energy, 0, [], 0, 0, 0, 0, 0, false, "", [])
-        pos = Particle(-11, -1, 0, 0, 0, 0, 0, 0, -energy, energy, 0, [], 0, 0, 0, 0, 0, false, "", [])
+        elec = Particle(11, -1, 0, 0, 0, 0, 0, 0, -energy, energy, 0, [], 0, 0, 0, 0, 0, false, "", [])
+        pos = Particle(-11, -1, 0, 0, 0, 0, 0, 0, energy, energy, 0, [], 0, 0, 0, 0, 0, false, "", [])
 
         weights = Float64[]
         totsigma = 0
         # Go through the quark flavors and get the total sum of the differential cross section
-         for i in range(1, 5)
+         for i in range(1, 4)
             if i == 1
                 q =1
             elseif i == 2
@@ -238,13 +238,13 @@ function reconMomenta(events)
             append!(weights, dsigma(costh, q))
             totsigma += dsigma(costh, q)
         end
-        items = [1, 2, 3, 4, 5]
+        items = [1, 2, 3, 4]
         # Choose the quark flavor
         flavor = sample(items, Weights(weights))
 
         # Create the q and q bar particles
-        q = Particle(flavor, 1, 0, 1, 0, 0, energy * sinth * cos(phi), energy * sinth * sin(phi), energy * costh, energy, phi, [0, 0, 0, 0], 501, 0, 1, 0, 0, true, "", [])
-        qbar = Particle(-flavor, 1, 0, 1, 0, 0, -energy * sinth * cos(phi), -energy * sinth * sin(phi), -energy * costh, energy, phi, [0, 0, 0, 0], 0, 501, 1, 0, 0, true, "", [])
+        q = Particle(flavor, 1, 0, 1, 0, 0, -energy * sinth * cos(phi), -energy * sinth * sin(phi), -energy * costh, energy, phi, [0, 0, 0, 0], 501, 0, 1, 0, 0, true, "", [])
+        qbar = Particle(-flavor, 1, 0, 1, 0, 0, energy * sinth * cos(phi), energy * sinth * sin(phi), energy * costh, energy, phi, [0, 0, 0, 0], 0, 501, 1, 0, 0, true, "", [])
 
         push!(reconEvents, Event([], [pos, elec, q, qbar]))
     end
@@ -259,5 +259,5 @@ function generateEvents(nEvents, nInt)
     # Reconstruct the momenta
     finalEvents = reconMomenta(events)
 
-    return finalEvents, Integ, error
+    return finalEvents, Integ*pb, error*pb
 end

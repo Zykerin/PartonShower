@@ -10,11 +10,13 @@ using ProgressBars
 # Variable to decide whether or not to generate the events from the hard proccess as well or read from an already generated lhe file 
 # Options are: "generate" or "lhe"
 whichEvents::String = "generate"
+global numGen::Int64 = 1E6
 
-outputFile::String = "juliaColorStructure.lhe"
+
+outputFile::String = "juliaFullyGenerated.lhe"
 #outputFile::String = "juliaColorStructureSmall.lhe"
-error = 0.1
-sigma = 1.2
+error::Float64 = 0.1
+sigma::Float64 = 1.2
 myEvents = []
 
 if whichEvents == "lhe"
@@ -24,7 +26,7 @@ if whichEvents == "lhe"
     inputFile::String = "eejj_ECM206_1E6.lhe.gz"
     #inputFile::String = "eejj_ECM206.lhe.gz"
     
-    print("Reading Events \n")
+    print("Reading Events from " * inputFile * "\n")
     events = parse_lhe(inputFile)
 
     for ev in events
@@ -37,14 +39,14 @@ if whichEvents == "lhe"
 
     end
 elseif whichEvents == "generate"
-    print("Generate events selected. \n")
-    print("Generating events\n")
-    myEvents, sigma, error = generateEvents(1E4, 1E6)
+    print("Generate events selected\n")
+    print("Now generating " * string(numGen)* " events\n")
+    myEvents, sigma, error = generateEvents(numGen, 1E6)
 end
 showeredEvents = []
 
 
-print("Showering events \n")
+print("Showering " * string(length(myEvents))* " events \n")
 for (i, ev) in tqdm(enumerate(myEvents))
     newEvent = showerEvent(ev, pTmin, aSover)
     push!(showeredEvents, newEvent)
@@ -62,5 +64,5 @@ for ev in showeredEvents
 end
 
 
-
+print("Writing to " * outputFile * " \n")
 writeLHE(outputFile, showeredEV, ECM^2, ECM, sigma, error)
