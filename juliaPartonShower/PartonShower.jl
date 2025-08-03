@@ -6,14 +6,56 @@ include("Shower.jl")
 include("HardProccessEventGenerator.jl")
 using LHEF
 using ProgressBars
+using ArgParse
 
 # Variable to decide whether or not to generate the events from the hard proccess as well or read from an already generated lhe file 
 # Options are: "generate" or "lhe"
-whichEvents::String = "generate"
+whichEvents::String = "lhe"
 global numGen::Int64 = 1E6
 
+arguments = ArgParseSettings()
 
-outputFile::String = "juliaFullyGenerated.lhe"
+@add_arg_table arguments begin
+    "--generate"
+        help = "Generate the hard proccess events then shower them"
+        action = :store_true
+    "--lhefile"
+        help = "Option to shower events from a lhe file"
+        action = :store_true
+    "--infile"
+        help = "File to get hard proccess events from"
+        arg_type = String
+        default = ""
+        required = "--lhefile" in ARGS
+    "-N"
+        help = "Number of events to generate"
+        arg_type = Int64
+        required = "--Generate" in ARGS
+    "outfile"
+        help = "The file to output the showered events"
+        arg_type = String
+        required = true
+      
+end
+
+
+args = parse_args(arguments)
+
+outputFile::String = args["outfile"]
+
+if args["generate"]
+    global whichEvents = "generate"
+    global numGen = args["N"]
+elseif args["lhefile"]
+    global whichEvents = "lhe"
+    global outputFile = args["infile"]
+end
+
+outputFile::String = args["outfile"]
+if last(outputFile, 4) != ".lhe"
+      outputFile *= ".lhe"
+end
+#outputFile::String = "juliaShower.lhe"
 #outputFile::String = "juliaColorStructureSmall.lhe"
 error::Float64 = 0.1
 sigma::Float64 = 1.2
